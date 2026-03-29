@@ -2,8 +2,9 @@
 set -eu
 
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-APP_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
-REPO_ROOT="$(CDPATH= cd -- "$APP_ROOT/../.." && pwd)"
+IOS_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
+MOBILE_ROOT="$(CDPATH= cd -- "$IOS_ROOT/.." && pwd)"
+REPO_ROOT="$(CDPATH= cd -- "$MOBILE_ROOT/../.." && pwd)"
 
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
@@ -21,5 +22,5 @@ cd "$REPO_ROOT"
 bun install --frozen-lockfile
 bun run build
 
-cd "$APP_ROOT"
+cd "$MOBILE_ROOT"
 bun x expo prebuild -p ios --clean --non-interactive

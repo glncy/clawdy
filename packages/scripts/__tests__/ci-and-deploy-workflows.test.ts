@@ -92,9 +92,9 @@ describe("ci and deploy workflows", () => {
     expect(workflow).not.toContain("This is the placeholder iOS build step.");
   });
 
-  it("documents the Xcode Cloud post-clone script in the mobile app", async () => {
+  it("documents the Xcode Cloud post-clone script in the iOS project", async () => {
     const script = await readFile(
-      new URL("../../../apps/mobile/ci_scripts/ci_post_clone.sh", import.meta.url),
+      new URL("../../../apps/mobile/ios/ci_scripts/ci_post_clone.sh", import.meta.url),
       "utf8",
     );
 
@@ -103,13 +103,13 @@ describe("ci and deploy workflows", () => {
     expect(script).not.toContain("pod install");
   });
 
-  it("provides the Xcode Cloud post-clone entrypoint at the repository root", async () => {
+  it("provides the Xcode Cloud post-clone entrypoint at the iOS project root", async () => {
     const script = await readFile(
-      new URL("../../../ci_scripts/ci_post_clone.sh", import.meta.url),
+      new URL("../../../apps/mobile/ios/ci_scripts/ci_post_clone.sh", import.meta.url),
       "utf8",
     );
 
-    expect(script).toContain("apps/mobile/ci_scripts/ci_post_clone.sh");
-    expect(script).toContain("exec");
+    expect(script).toContain("bun run build");
+    expect(script).toContain("bun x expo prebuild -p ios --clean --non-interactive");
   });
 });
