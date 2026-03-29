@@ -89,11 +89,15 @@ and stops without entering fallback approval.
 
 ### Secrets
 
+Store these as repository secrets, not environment secrets. The iOS trigger runs through a reusable workflow, and the App Store Connect credentials must be available through the repository-level `secrets` context.
+
 - `APP_STORE_CONNECT_ISSUER_ID`
 - `APP_STORE_CONNECT_KEY_ID`
 - `APP_STORE_CONNECT_PRIVATE_KEY`
 
 ### Variables
+
+Store these as GitHub Environment variables on the stage environments that execute the trigger job, such as `app-mobile@main` and `app-mobile@production`.
 
 - `XCODE_CLOUD_WORKFLOW_ID`
 - `ENV_FILE` when mobile builds need environment values written into the app
@@ -117,7 +121,7 @@ In App Store Connect:
 3. create a new API key
 4. save the downloaded `.p8` file immediately
 
-From that key, configure these GitHub secrets:
+From that key, configure these repository-level GitHub secrets:
 
 - `APP_STORE_CONNECT_KEY_ID`
   - the key identifier shown in App Store Connect
@@ -144,7 +148,7 @@ Store that identifier as the GitHub variable:
 
 - `XCODE_CLOUD_WORKFLOW_ID`
 
-This value should point to the workflow that builds the `apps/mobile` app.
+This value should point to the workflow that builds the `apps/mobile` app. Put it on the stage environments that run the iOS trigger job, such as `app-mobile@main` and `app-mobile@production`.
 
 ### 3. Configure The App Environment File
 
@@ -155,6 +159,16 @@ If the mobile workflow needs runtime values written into `.env`, set:
 as a GitHub Environment variable on the stage environments that run the trigger job, such as `app-mobile@main` and `app-mobile@production`.
 
 The reusable workflow writes this content into the app before triggering Xcode Cloud.
+
+### 3a. Keep Secrets Out Of The Stage Environment
+
+Do not store these App Store Connect credentials on `app-mobile@main` or `app-mobile@production`:
+
+- `APP_STORE_CONNECT_ISSUER_ID`
+- `APP_STORE_CONNECT_KEY_ID`
+- `APP_STORE_CONNECT_PRIVATE_KEY`
+
+Keep those three values as repository secrets instead. The reusable iOS workflow can read repository secrets reliably, while environment-scoped secrets are a poor fit for this setup.
 
 ### 4. Configure The iOS Build Approval Environment
 
