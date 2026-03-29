@@ -29,6 +29,31 @@ bun run check-types
 bun run build
 ```
 
+## How To Use This Boilerplate
+
+1. Clone the boilerplate repository.
+
+   ```bash
+   git clone https://github.com/glncy/fullstack-boilerplate-monorepo.git your-app-name
+   cd your-app-name
+   ```
+
+2. Point the local checkout at your own repository.
+   Create a new GitHub repository for your product, then replace `origin` so future pushes go to your app repo instead of the boilerplate source repo.
+
+   ```bash
+   git remote rename origin upstream
+   git remote add origin https://github.com/<your-org>/<your-repo>.git
+   ```
+
+3. Install dependencies and verify the starter boots.
+
+   ```bash
+   bun install
+   bun run dev
+   ```
+
+
 ## Deployment Environment Variables
 
 Set these before deploying or enabling the reusable workflows in this repo.
@@ -54,6 +79,32 @@ The updates worker also needs its project mapping in `apps/updates-worker/src/in
 ### GitHub Actions
 - `ENV_FILE` GitHub Environment variable for mobile app builds/releases
 - `EXPO_UP_GITHUB_TOKEN` GitHub secret for `expo-up` release, history, and rollback workflows
+
+## Upstream Sync
+
+### Boilerplate Upstream Sync
+
+This repo can track the separate boilerplate repo as an upstream source:
+
+- `https://github.com/glncy/fullstack-boilerplate-monorepo`
+
+### Add the upstream remote
+
+```bash
+git remote add upstream https://github.com/glncy/fullstack-boilerplate-monorepo.git
+```
+
+### Upstream Syncs
+
+After the upstream relationship is set up, create a branch and open a PR for each upstream sync:
+
+```bash
+git checkout -b chore/upstream-sync
+git fetch upstream
+git merge upstream/main
+```
+
+Use a branch and PR for each sync so upstream changes are reviewed before landing on `main`.
 
 ## Notes
 - This repository is a boilerplate, not a live product repository.
