@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "clawdy",
-    "slug": "clawdy",
+    "name": "clawdi",
+    "slug": "clawdi",
     "version": "0.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "clawdy",
+    "scheme": "clawdi",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "me.ttap.clawdy",
+      "bundleIdentifier": "me.ttap.clawdi",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -22,7 +22,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "me.ttap.clawdy"
+      "package": "me.ttap.clawdi"
     },
     "web": {
       "output": "static",

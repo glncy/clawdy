@@ -22,10 +22,10 @@ export default function HomeScreen() {
         />
         <View className="z-10 max-w-sm gap-4 rounded-3xl bg-surface/85 p-6">
           <AppText size="3xl" weight="bold">
-            clawdy
+            clawdi
           </AppText>
           <AppText color="muted">
-            Start building Clawdy from a clean Expo Router shell while we wire
+            Start building Clawdi from a clean Expo Router shell while we wire
             up the rest of the product experience.
           </AppText>
         </View>
