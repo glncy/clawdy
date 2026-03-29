@@ -33,6 +33,17 @@ describe("ci and deploy workflows", () => {
     expect(mainWorkflow).not.toContain("uses: ./.github/workflows/run-command.yml");
   });
 
+  it("forwards inherited secrets to reusable ios build workflows", async () => {
+    for (const fileName of ["pr-workflow.yml", "main-branch.yml", "mobile-production-app.yml"]) {
+      const workflow = await readWorkflow(fileName);
+      const iosBuildIndex = workflow.indexOf("uses: ./.github/workflows/ios-build.yml");
+      const inheritIndex = workflow.indexOf("secrets: inherit", iosBuildIndex);
+
+      expect(iosBuildIndex).toBeGreaterThan(-1);
+      expect(inheritIndex).toBeGreaterThan(iosBuildIndex);
+    }
+  });
+
   it("adds non-canceling concurrency to release workflows", async () => {
     for (const fileName of [
       "release-router.yml",
