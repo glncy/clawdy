@@ -23,7 +23,7 @@ The repo uses a reusable iOS workflow that triggers Xcode Cloud through the App 
 
 The reusable iOS workflow in:
 
-- [`.github/workflows/ios-build.yml`](/Users/glncy/codes/glncy/clawdy/.github/workflows/ios-build.yml)
+- [`.github/workflows/ios-build.yml`](../../.github/workflows/ios-build.yml)
 
 does the following:
 
@@ -41,7 +41,7 @@ Xcode Cloud owns the real Apple-native archive/sign/distribution steps.
 
 The post-clone setup script lives at:
 
-- [`apps/mobile/ci_scripts/ci_post_clone.sh`](/Users/glncy/codes/glncy/clawdy/apps/mobile/ci_scripts/ci_post_clone.sh)
+- [`apps/mobile/ci_scripts/ci_post_clone.sh`](../../apps/mobile/ci_scripts/ci_post_clone.sh)
 
 That script currently runs:
 
@@ -174,7 +174,7 @@ Those environments are used only when the Xcode Cloud trigger is fallback-eligib
 
 In Xcode Cloud, ensure the mobile workflow runs the repo post-clone script:
 
-- [`apps/mobile/ci_scripts/ci_post_clone.sh`](/Users/glncy/codes/glncy/clawdy/apps/mobile/ci_scripts/ci_post_clone.sh)
+- [`apps/mobile/ci_scripts/ci_post_clone.sh`](../../apps/mobile/ci_scripts/ci_post_clone.sh)
 
 That script prepares the monorepo and generates the iOS project during the cloud build.
 

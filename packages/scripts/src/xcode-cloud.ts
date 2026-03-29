@@ -200,15 +200,14 @@ async function getWorkflow({
 }
 
 function matchesGitReference(refName: string, resource: AppStoreConnectResource<GitReferenceAttributes>) {
-  const attributes = resource.attributes ?? {};
-  const candidates = new Set([
-    attributes.name,
-    attributes.canonicalName,
-    `refs/heads/${refName}`,
-    `refs/tags/${refName}`,
-  ]);
+  const { canonicalName, name } = resource.attributes ?? {};
 
-  return candidates.has(refName);
+  return (
+    name === refName ||
+    canonicalName === refName ||
+    canonicalName === `refs/heads/${refName}` ||
+    canonicalName === `refs/tags/${refName}`
+  );
 }
 
 async function findGitReference({

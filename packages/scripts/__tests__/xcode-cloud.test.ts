@@ -64,7 +64,7 @@ describe("xcode cloud scripts", () => {
                 attributes: {
                   canonicalName: "refs/heads/main",
                   kind: "branch",
-                  name: "main",
+                  name: "origin/main",
                 },
                 id: "git-ref-main",
                 type: "scmGitReferences",

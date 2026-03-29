@@ -9,7 +9,12 @@ export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
 if ! command -v bun >/dev/null 2>&1; then
-  curl -fsSL https://bun.sh/install | bash
+  INSTALL_SCRIPT="$(mktemp)"
+  trap 'rm -f "$INSTALL_SCRIPT"' EXIT
+  curl -fsSL https://bun.sh/install -o "$INSTALL_SCRIPT"
+  bash "$INSTALL_SCRIPT"
+  rm -f "$INSTALL_SCRIPT"
+  trap - EXIT
 fi
 
 cd "$REPO_ROOT"
