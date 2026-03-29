@@ -1,0 +1,85 @@
+name: "✅ CI Checks"
+
+on:
+  workflow_call:
+    inputs:
+      run_build:
+        description: Whether the build check should run
+        required: false
+        default: false
+        type: boolean
+      run_lint:
+        description: Whether the lint check should run
+        required: false
+        default: false
+        type: boolean
+      run_type_check:
+        description: Whether the type check should run
+        required: false
+        default: false
+        type: boolean
+      run_test:
+        description: Whether the test check should run
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  checks:
+    name: "✅ CI Checks"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Build
+        id: build
+        if: inputs.run_build
+        shell: bash
+        run: bun run build
+
+      - name: Lint
+        id: lint
+        if: ${{ always() && inputs.run_lint }}
+        shell: bash
+        run: bun run lint
+
+      - name: Type Check
+        id: type_check
+        if: ${{ always() && inputs.run_type_check }}
+        shell: bash
+        run: bun run check-types
+
+      - name: Test
+        id: test
+        if: ${{ always() && inputs.run_test }}
+        shell: bash
+        run: bun run test
+
+      - name: Summarize CI results
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## CI Checks"
+            echo ""
+            echo "- Build: ${{ steps.build.outcome || 'skipped' }}"
+            echo "- Lint: ${{ steps.lint.outcome || 'skipped' }}"
+            echo "- Type Check: ${{ steps.type_check.outcome || 'skipped' }}"
+            echo "- Test: ${{ steps.test.outcome || 'skipped' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if any required check failed
+        if: always()
+        shell: bash
+        run: |
+          if { [ "${{ inputs.run_build }}" = "true" ] && [ "${{ steps.build.outcome }}" != "success" ]; } || \
+             { [ "${{ inputs.run_lint }}" = "true" ] && [ "${{ steps.lint.outcome }}" != "success" ]; } || \
+             { [ "${{ inputs.run_type_check }}" = "true" ] && [ "${{ steps.type_check.outcome }}" != "success" ]; } || \
+             { [ "${{ inputs.run_test }}" = "true" ] && [ "${{ steps.test.outcome }}" != "success" ]; }; then
+            echo "One or more required CI checks failed." >&2
+            exit 1
+          fi

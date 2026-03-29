@@ -1,0 +1,26 @@
+name: Write Env File
+description: Write an app .env file from GitHub environment variables
+
+inputs:
+  app_path:
+    description: App path where the .env file should be written
+    required: true
+  env_file:
+    description: Contents to write to the .env file
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Write .env file
+      if: ${{ inputs.env_file != '' }}
+      shell: bash
+      run: |
+        printf '%s\n' "${{ inputs.env_file }}" > "${{ inputs.app_path }}/.env"
+
+    - name: Skip .env file creation
+      if: ${{ inputs.env_file == '' }}
+      shell: bash
+      run: |
+        echo "ENV_FILE is empty; skipping .env creation for ${{ inputs.app_path }}."

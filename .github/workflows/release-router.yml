@@ -1,0 +1,152 @@
+name: "🚦 Release Router"
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: release-router-${{ github.event.release.tag_name || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  resolve-release:
+    name: "🏷️ Resolve Release Tag"
+    runs-on: ubuntu-latest
+    outputs:
+      release-sha: ${{ steps.resolve.outputs.release_sha }}
+      tag-name: ${{ steps.resolve.outputs.tag_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: resolve
+        shell: bash
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+
+          if [ -z "$TAG_NAME" ]; then
+            echo "Release tag is required." >&2
+            exit 1
+          fi
+
+          git fetch origin main --tags
+          RELEASE_SHA="$(git rev-list -n 1 "$TAG_NAME")"
+
+          if [ -z "$RELEASE_SHA" ]; then
+            echo "Could not resolve release tag: $TAG_NAME" >&2
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$RELEASE_SHA" origin/main; then
+            echo "Release commit is not reachable from origin/main." >&2
+            exit 1
+          fi
+
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+
+  classify-release:
+    name: "🧭 Classify Release Target"
+    needs: resolve-release
+    runs-on: ubuntu-latest
+    outputs:
+      valid: ${{ steps.classify.outputs.valid }}
+      tag-kind: ${{ steps.classify.outputs.tag_kind }}
+      target-name: ${{ steps.classify.outputs.target_name }}
+      target-path: ${{ steps.classify.outputs.target_path }}
+      target-type: ${{ steps.classify.outputs.target_type }}
+      reason: ${{ steps.classify.outputs.reason }}
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.resolve-release.outputs.release-sha }}
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Classify release target
+        id: classify
+        shell: bash
+        run: |
+          while IFS='=' read -r key value; do
+            case "$key" in
+              valid|tag_kind|target_name|target_path|target_type|reason)
+                echo "$key=$value" >> "$GITHUB_OUTPUT"
+                ;;
+            esac
+          done < <(
+            bun run repo-scripts classify-release-target \
+              --tag-name "${{ needs.resolve-release.outputs.tag-name }}" \
+              --head-ref "${{ needs.resolve-release.outputs.release-sha }}"
+          )
+
+  mobile-production:
+    name: "📲 Mobile Production"
+    needs: [resolve-release, classify-release]
+    if: needs.classify-release.outputs.valid == 'true' && needs.classify-release.outputs.target-type == 'mobile'
+    uses: ./.github/workflows/mobile-production-app.yml
+    with:
+      app_label: ${{ needs.classify-release.outputs.target-path }}
+      app_path: ${{ needs.classify-release.outputs.target-path }}
+      tag_name: ${{ needs.resolve-release.outputs.tag-name }}
+    secrets: inherit
+
+  promote-cloudflare-production:
+    name: "☁️ Promote Cloudflare Production"
+    needs: [resolve-release, classify-release]
+    if: needs.classify-release.outputs.valid == 'true' && needs.classify-release.outputs.target-type == 'cloudflare'
+    uses: ./.github/workflows/promote-cloudflare-production.yml
+    with:
+      tag_name: ${{ needs.resolve-release.outputs.tag-name }}
+    secrets: inherit
+
+  fail-unsupported-release:
+    name: "⛔ Fail Unsupported Release"
+    needs: [resolve-release, classify-release]
+    if: needs.classify-release.outputs.valid != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail invalid release target
+        shell: bash
+        run: |
+          echo "${{ needs.classify-release.outputs.reason }}" >&2
+          exit 1
+
+  write-summary:
+    name: "📝 Write Release Summary"
+    if: always()
+    needs:
+      - resolve-release
+      - classify-release
+      - mobile-production
+      - promote-cloudflare-production
+      - fail-unsupported-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write summary
+        shell: bash
+        run: |
+          {
+            echo "## Release Router"
+            echo ""
+            echo "- Release tag: ${{ needs.resolve-release.outputs.tag-name }}"
+            echo "- Release commit: ${{ needs.resolve-release.outputs.release-sha }}"
+            echo "- Tag kind: ${{ needs.classify-release.outputs.tag-kind }}"
+            echo "- Target name: ${{ needs.classify-release.outputs.target-name }}"
+            echo "- Target path: ${{ needs.classify-release.outputs.target-path }}"
+            echo "- Target type: ${{ needs.classify-release.outputs.target-type }}"
+            echo "- Valid target: ${{ needs.classify-release.outputs.valid }}"
+            echo "- Reason: ${{ needs.classify-release.outputs.reason }}"
+            echo "- Mobile Production result: ${{ needs.mobile-production.result }}"
+            echo "- Promote Cloudflare Production result: ${{ needs.promote-cloudflare-production.result }}"
+            echo "- Unsupported release result: ${{ needs.fail-unsupported-release.result }}"
+          } >> "$GITHUB_STEP_SUMMARY"

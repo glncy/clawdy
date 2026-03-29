@@ -1,0 +1,262 @@
+@import "@repo/tailwind-config";
+@import "uniwind";
+
+/* HeroUI Native styles */
+@import 'heroui-native/styles';
+
+/* Path to the heroui-native lib inside node_modules relative to global.css */
+@source '../node_modules/heroui-native/lib';
+
+@layer theme {
+  :root {
+    @variant light {
+      /* Base Colors - Light Mode (Morning Mist) */
+      --background: oklch(0.96 0.02 260); /* Slightly darker and more purple tinted */
+      --foreground: oklch(0.2 0.05 240);
+      --surface: oklch(1 0 0);
+      
+      /* Surface secondary and tertiary required by Uniwind */
+      --surface-secondary: oklch(0.96 0.01 210);
+      --surface-secondary-foreground: oklch(0.2 0.05 240);
+      --surface-tertiary: oklch(0.94 0.01 210);
+      --surface-tertiary-foreground: oklch(0.2 0.05 240);
+
+      --muted: oklch(0.55 0.03 240); /* hsl(215 16% 47%) */
+      
+      --default: oklch(0.94 0.02 240);
+      --default-foreground: oklch(0.2 0.05 240);
+      
+      --primary: oklch(0.55 0.25 285); /* hsl(258 80% 55%) */
+      --primary-foreground: oklch(1 0 0); /* hsl(0 0% 100%) */
+      
+      --secondary: oklch(0.6 0.15 220); /* hsl(190 85% 45%) */
+      --secondary-foreground: oklch(1 0 0);
+      
+      /* HeroUI Native relies on --accent for primary brand components */
+      --accent: oklch(0.55 0.25 285); /* hsl(258 80% 55%) */
+      --accent-foreground: oklch(1 0 0);
+      
+      --danger: oklch(0.65 0.23 25); /* hsl(350 89% 60%) */
+      --color-scrim: rgba(0, 0, 0, 0.8);
+      
+      --segment: oklch(1 0 0);
+      --segment-foreground: oklch(0.2 0.05 240);
+      
+      /* Form fields */
+      --field-background: oklch(1 0 0);
+      --field-foreground: oklch(0.2 0.05 240);
+      --field-placeholder: var(--muted);
+      --field-border: transparent;
+      
+      /* Status */
+      --success: oklch(0.73 0.19 150);
+      --success-foreground: oklch(0.2 0.05 240);
+      --warning: oklch(0.78 0.15 72);
+      --warning-foreground: oklch(0.2 0.05 240);
+    }
+
+    @variant hot-seat {
+      /* Hot Seat - Light Mode */
+      --background: oklch(0.98 0.01 260);
+      --foreground: oklch(0.15 0.02 260);
+      --surface: oklch(1 0 0);
+      --surface-foreground: var(--foreground);
+      
+      --surface-secondary: oklch(0.96 0.01 210);
+      --surface-secondary-foreground: oklch(0.2 0.05 240);
+      --surface-tertiary: oklch(0.94 0.01 210);
+      --surface-tertiary-foreground: oklch(0.2 0.05 240);
+
+      --overlay: var(--surface);
+      --overlay-foreground: var(--foreground);
+
+      --muted: oklch(0.55 0.03 240);
+      
+      --default: oklch(0.94 0.02 240);
+      --default-foreground: oklch(0.2 0.05 240);
+
+      --primary: oklch(0.63 0.22 15); /* Hot Red */
+      --primary-foreground: oklch(1 0 0);
+
+      --secondary: oklch(0.6 0.15 220);
+      --secondary-foreground: oklch(1 0 0);
+
+      --accent: oklch(0.63 0.22 15); /* Hot Red */
+      --accent-foreground: oklch(1 0 0);
+
+      --danger: oklch(0.65 0.23 25);
+      --danger-foreground: oklch(1 0 0);
+      
+      --color-scrim: rgba(0, 0, 0, 0.8);
+
+      --segment: oklch(1 0 0);
+      --segment-foreground: oklch(0.2 0.05 240);
+      
+      --border: oklch(0.92 0.01 260);
+      --separator: oklch(0.92 0.01 260);
+      --focus: var(--primary);
+      --link: var(--primary);
+
+      --field-background: oklch(1 0 0);
+      --field-foreground: oklch(0.2 0.05 240);
+      --field-placeholder: var(--muted);
+      --field-border: transparent;
+      
+      --success: oklch(0.73 0.19 150);
+      --success-foreground: oklch(0.2 0.05 240);
+      --warning: oklch(0.78 0.15 72);
+      --warning-foreground: oklch(0.2 0.05 240);
+
+      --surface-shadow: oklch(0.1 0.02 260 / 0.1);
+      --overlay-shadow: oklch(0.1 0.02 260 / 0.2);
+      --field-shadow: oklch(0.1 0.02 260 / 0.05);
+    }
+
+    @variant hot-seat-night {
+      /* Hot Seat - Dark Mode */
+      --background: oklch(0.15 0.01 270); /* #0f0f13 */
+      --foreground: oklch(1 0 0);
+      --surface: oklch(0.2 0.02 270); /* #1c1c23 approx */
+      --surface-foreground: var(--foreground);
+      
+      --surface-secondary: oklch(0.24 0.02 270);
+      --surface-secondary-foreground: oklch(1 0 0);
+      --surface-tertiary: oklch(0.28 0.02 270);
+      --surface-tertiary-foreground: oklch(1 0 0);
+
+      --overlay: var(--surface);
+      --overlay-foreground: var(--foreground);
+
+      --muted: oklch(0.6 0.04 250);
+      
+      --default: oklch(0.28 0.05 250);
+      --default-foreground: oklch(0.95 0.02 250);
+
+      --primary: oklch(0.63 0.22 15); /* Hot Red */
+      --primary-foreground: oklch(1 0 0);
+
+      --secondary: oklch(0.65 0.18 220);
+      --secondary-foreground: oklch(1 0 0);
+
+      --accent: oklch(0.63 0.22 15); /* Hot Red */
+      --accent-foreground: oklch(1 0 0);
+
+      --danger: oklch(0.65 0.23 25);
+      --danger-foreground: oklch(1 0 0);
+      
+      --color-scrim: rgba(0, 0, 0, 0.8);
+
+      --segment: oklch(0.3 0.04 250);
+      --segment-foreground: oklch(0.95 0.02 250);
+      
+      --border: oklch(0.25 0.02 270);
+      --separator: oklch(0.25 0.02 270);
+      --focus: var(--primary);
+      --link: var(--primary);
+
+      --field-background: oklch(0.28 0.05 250);
+      --field-foreground: var(--foreground);
+      --field-placeholder: var(--muted);
+      --field-border: transparent;
+
+      --success: oklch(0.73 0.19 150);
+      --success-foreground: oklch(0.2 0.05 240);
+      --warning: oklch(0.82 0.13 76);
+      --warning-foreground: oklch(0.2 0.05 240);
+
+      --surface-shadow: oklch(0 0 0 / 0.5);
+      --overlay-shadow: oklch(0 0 0 / 0.5);
+      --field-shadow: oklch(0 0 0 / 0.2);
+    }
+
+    @variant dark {
+      /* Base Colors - Dark Mode (Neon Bioluminescence) */
+      --background: oklch(0.18 0.05 250); /* hsl(230 40% 8%) */
+      --foreground: oklch(0.95 0.02 250); /* hsl(210 40% 98%) */
+      --surface: oklch(0.2 0.05 250); /* hsl(230 40% 12%) */
+      
+      --surface-secondary: oklch(0.24 0.05 250);
+      --surface-secondary-foreground: oklch(0.95 0.02 250);
+      --surface-tertiary: oklch(0.28 0.05 250);
+      --surface-tertiary-foreground: oklch(0.95 0.02 250);
+      
+      --muted: oklch(0.6 0.04 250); /* hsl(215 20% 65%) */
+      
+      --default: oklch(0.28 0.05 250);
+      --default-foreground: oklch(0.95 0.02 250);
+      
+      --primary: oklch(0.7 0.25 285); /* hsl(258 89% 65%) */
+      --primary-foreground: oklch(1 0 0);
+      
+      --secondary: oklch(0.65 0.18 220); /* hsl(190 90% 50%) */
+      --secondary-foreground: oklch(1 0 0);
+      
+      /* HeroUI Native relies on --accent for primary brand components */
+      --accent: oklch(0.7 0.25 285); /* hsl(258 89% 65%) */
+      --accent-foreground: oklch(1 0 0);
+      
+      --danger: oklch(0.65 0.23 25); /* hsl(350 89% 60%) */
+      --color-scrim: rgba(0, 0, 0, 0.8);
+      
+      --segment: oklch(0.3 0.04 250);
+      --segment-foreground: oklch(0.95 0.02 250);
+      
+      /* Form fields */
+      --field-background: oklch(0.28 0.05 250);
+      --field-foreground: var(--foreground);
+      --field-placeholder: var(--muted);
+      --field-border: transparent;
+      
+      /* Status */
+      --success: oklch(0.73 0.19 150);
+      --success-foreground: oklch(0.2 0.05 240);
+      --warning: oklch(0.82 0.13 76);
+      --warning-foreground: oklch(0.2 0.05 240);
+    }
+  }
+}
+
+@theme inline static {
+  /* Global line-height override tuned for Poppins to avoid glyph clipping */
+  --text-xs--line-height: 1.4;
+  --text-sm--line-height: 1.4;
+  --text-base--line-height: 1.4;
+  --text-lg--line-height: 1.35;
+  --text-xl--line-height: 1.35;
+  --text-2xl--line-height: 1.3;
+  --text-3xl--line-height: 1.25;
+  --text-4xl--line-height: 1.2;
+  --text-5xl--line-height: 1.2;
+  --text-6xl--line-height: 1.2;
+
+  /* HeroUI Default Font family overrides */
+  --font-thin: 'Poppins_100Thin';
+  --font-extralight: 'Poppins_200ExtraLight';
+  --font-light: 'Poppins_300Light';
+  --font-normal: 'Poppins_400Regular';
+  --font-medium: 'Poppins_500Medium';
+  --font-semibold: 'Poppins_600SemiBold';
+  --font-bold: 'Poppins_700Bold';
+  --font-extrabold: 'Poppins_800ExtraBold';
+  --font-black: 'Poppins_900Black';
+
+  /* Custom Font Classes */
+  --font-title: 'Syne_800ExtraBold';
+  --font-title-bold: 'Syne_800ExtraBold';
+
+  /* Common Radii */
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+
+  /* Map variables to Tailwind */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+}

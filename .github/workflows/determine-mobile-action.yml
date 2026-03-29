@@ -1,0 +1,171 @@
+name: "📱 Determine Mobile Action"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+on:
+  workflow_call:
+    inputs:
+      app_path:
+        description: App path associated with the workflow run
+        required: true
+        type: string
+      app_label:
+        description: Human-friendly label for summaries and job output
+        required: false
+        default: ""
+        type: string
+      android_fingerprint_path:
+        description: Android fingerprint file path
+        required: false
+        default: ""
+        type: string
+      event_name:
+        description: Source GitHub event name
+        required: true
+        type: string
+      ios_fingerprint_path:
+        description: iOS fingerprint file path
+        required: false
+        default: ""
+        type: string
+      head_branch:
+        description: Branch associated with the workflow run
+        required: true
+        type: string
+      head_sha:
+        description: Commit SHA associated with the workflow run
+        required: true
+        type: string
+      pull_number:
+        description: Pull request number when the source event is pull_request
+        required: false
+        default: ""
+        type: string
+    outputs:
+      head-branch:
+        description: Branch associated with the workflow run
+        value: ${{ jobs.determine.outputs.head-branch }}
+      head-sha:
+        description: Commit SHA associated with the workflow run
+        value: ${{ jobs.determine.outputs.head-sha }}
+      run-android-build:
+        description: Whether Android build should run
+        value: ${{ jobs.determine.outputs.run-android-build }}
+      run-ios-build:
+        description: Whether iOS build should run
+        value: ${{ jobs.determine.outputs.run-ios-build }}
+      run-mobile-release:
+        description: Whether mobile release update should run
+        value: ${{ jobs.determine.outputs.run-mobile-release }}
+
+jobs:
+  determine:
+    name: "📱 Determine Mobile Action"
+    runs-on: ubuntu-latest
+    outputs:
+      head-branch: ${{ steps.determine.outputs.head_branch }}
+      head-sha: ${{ steps.determine.outputs.head_sha }}
+      run-android-build: ${{ steps.determine.outputs.run_android_build }}
+      run-ios-build: ${{ steps.determine.outputs.run_ios_build }}
+      run-mobile-release: ${{ steps.determine.outputs.run_mobile_release }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Determine mobile action
+        id: determine
+        shell: bash
+        run: |
+          HEAD_SHA="${{ inputs.head_sha }}"
+          HEAD_BRANCH="${{ inputs.head_branch }}"
+          PULL_NUMBER="${{ inputs.pull_number }}"
+          APP_PATH="${{ inputs.app_path }}"
+          APP_LABEL="${{ inputs.app_label }}"
+          ANDROID_FINGERPRINT_PATH="${{ inputs.android_fingerprint_path }}"
+          IOS_FINGERPRINT_PATH="${{ inputs.ios_fingerprint_path }}"
+
+          if [ -z "$APP_LABEL" ]; then
+            APP_LABEL="$APP_PATH"
+          fi
+
+          if [ -z "$ANDROID_FINGERPRINT_PATH" ]; then
+            ANDROID_FINGERPRINT_PATH="${APP_PATH}/fingerprints/android.json"
+          fi
+
+          if [ -z "$IOS_FINGERPRINT_PATH" ]; then
+            IOS_FINGERPRINT_PATH="${APP_PATH}/fingerprints/ios.json"
+          fi
+
+          FINGERPRINT_CHANGE_OUTPUT="$(bun run repo-scripts latest-commit-fingerprint-changes \
+            --head-ref "$HEAD_SHA" \
+            --android-fingerprint-path "$ANDROID_FINGERPRINT_PATH" \
+            --ios-fingerprint-path "$IOS_FINGERPRINT_PATH")"
+
+          ANDROID_CHANGED="$(echo "$FINGERPRINT_CHANGE_OUTPUT" | awk -F= '/^android_changed=/{print $2}' | tail -1)"
+          ANDROID_PRODUCTION_ONLY="$(echo "$FINGERPRINT_CHANGE_OUTPUT" | awk -F= '/^android_production_only=/{print $2}' | tail -1)"
+          IOS_CHANGED="$(echo "$FINGERPRINT_CHANGE_OUTPUT" | awk -F= '/^ios_changed=/{print $2}' | tail -1)"
+          IOS_PRODUCTION_ONLY="$(echo "$FINGERPRINT_CHANGE_OUTPUT" | awk -F= '/^ios_production_only=/{print $2}' | tail -1)"
+
+          if [ "$ANDROID_CHANGED" = "true" ] && [ "$ANDROID_PRODUCTION_ONLY" != "true" ]; then
+            RUN_ANDROID_BUILD="true"
+          else
+            RUN_ANDROID_BUILD="false"
+          fi
+
+          if [ "$IOS_CHANGED" = "true" ] && [ "$IOS_PRODUCTION_ONLY" != "true" ]; then
+            RUN_IOS_BUILD="true"
+          else
+            RUN_IOS_BUILD="false"
+          fi
+
+          if [ "$RUN_ANDROID_BUILD" = "true" ] || [ "$RUN_IOS_BUILD" = "true" ]; then
+            RUN_MOBILE_RELEASE="false"
+            REASON="Latest commit changed one or more non-production fingerprint history files."
+          elif [ "$ANDROID_CHANGED" = "true" ] || [ "$IOS_CHANGED" = "true" ]; then
+            RUN_MOBILE_RELEASE="false"
+            REASON="Latest commit only changed production fingerprint history files."
+          else
+            RUN_MOBILE_RELEASE="$(bun run repo-scripts latest-commit-deps-changed "$APP_PATH" \
+              --event "${{ inputs.event_name }}" \
+              --head-sha "$HEAD_SHA" \
+              --owner "${{ github.repository_owner }}" \
+              --repo "${{ github.event.repository.name }}" \
+              --pull-number "$PULL_NUMBER" | tail -1)"
+            if [ "$RUN_MOBILE_RELEASE" = "true" ]; then
+              REASON="No fingerprint history file changed in the latest commit, but the latest commit changed ${APP_PATH} or its dependencies."
+            else
+              REASON="The latest commit did not change fingerprint history files, ${APP_PATH}, or its dependencies."
+            fi
+          fi
+
+          echo "head_branch=$HEAD_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "run_android_build=$RUN_ANDROID_BUILD" >> "$GITHUB_OUTPUT"
+          echo "run_ios_build=$RUN_IOS_BUILD" >> "$GITHUB_OUTPUT"
+          echo "run_mobile_release=$RUN_MOBILE_RELEASE" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Determine Mobile Action"
+            echo ""
+            echo "- App: ${APP_LABEL} (${APP_PATH})"
+            echo "- Source event: ${{ inputs.event_name }}"
+            echo "- Branch: ${HEAD_BRANCH}"
+            echo "- Commit: ${HEAD_SHA}"
+            echo "- Android fingerprint: ${ANDROID_FINGERPRINT_PATH}"
+            echo "- iOS fingerprint: ${IOS_FINGERPRINT_PATH}"
+            echo "- Android fingerprint changed: ${ANDROID_CHANGED}"
+            echo "- Android production only: ${ANDROID_PRODUCTION_ONLY}"
+            echo "- iOS fingerprint changed: ${IOS_CHANGED}"
+            echo "- iOS production only: ${IOS_PRODUCTION_ONLY}"
+            echo "- Android build: ${RUN_ANDROID_BUILD}"
+            echo "- iOS build: ${RUN_IOS_BUILD}"
+            echo "- Release update: ${RUN_MOBILE_RELEASE}"
+            echo "- Reason: ${REASON}"
+          } >> "$GITHUB_STEP_SUMMARY"

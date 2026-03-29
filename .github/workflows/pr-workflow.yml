@@ -1,0 +1,91 @@
+name: "🧪 PR Workflow"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  determine-required-workflows:
+    name: "🧭 Determine Required Workflows"
+    uses: ./.github/workflows/determine-required-workflows.yml
+    with:
+      base_sha: ${{ github.event.pull_request.base.sha }}
+
+  ci-checks:
+    name: "✅ CI Checks"
+    needs: determine-required-workflows
+    uses: ./.github/workflows/ci-checks.yml
+    with:
+      run_build: ${{ needs.determine-required-workflows.outputs.run-build == 'true' }}
+      run_lint: ${{ needs.determine-required-workflows.outputs.run-lint == 'true' }}
+      run_type_check: ${{ needs.determine-required-workflows.outputs.run-type-check == 'true' }}
+      run_test: ${{ needs.determine-required-workflows.outputs.run-test == 'true' }}
+
+  fingerprint-check:
+    name: "🔐 Fingerprint Check"
+    needs: [determine-required-workflows, ci-checks]
+    if: |
+      (
+        needs.determine-required-workflows.outputs.run-build == 'true' ||
+        needs.determine-required-workflows.outputs.run-lint == 'true' ||
+        needs.determine-required-workflows.outputs.run-type-check == 'true' ||
+        needs.determine-required-workflows.outputs.run-test == 'true'
+      ) &&
+      needs.ci-checks.result == 'success'
+    uses: ./.github/workflows/mobile-fingerprint-check.yml
+    with:
+      app_path: apps/mobile
+      base_sha: ${{ github.event.pull_request.base.sha }}
+      fingerprint_profile: preview
+      fingerprint_ref: ${{ github.event.pull_request.head.ref }}
+      head_sha: ${{ github.event.pull_request.head.sha }}
+
+  determine-mobile-action:
+    name: "📱 Determine Mobile Action"
+    needs: [determine-required-workflows, ci-checks, fingerprint-check]
+    if: |
+      needs.ci-checks.result == 'success' &&
+      needs.fingerprint-check.result == 'success' &&
+      needs.fingerprint-check.outputs.run-check == 'true'
+    uses: ./.github/workflows/determine-mobile-action.yml
+    with:
+      event_name: ${{ github.event_name }}
+      app_path: apps/mobile
+      head_branch: ${{ github.event.pull_request.head.ref }}
+      head_sha: ${{ github.event.pull_request.head.sha }}
+      pull_number: ${{ github.event.pull_request.number }}
+
+  android-build:
+    name: "🤖 Android Build"
+    needs: determine-mobile-action
+    if: needs.determine-mobile-action.outputs.run-android-build == 'true'
+    uses: ./.github/workflows/android-build.yml
+    with:
+      app_path: apps/mobile
+      head_branch: ${{ needs.determine-mobile-action.outputs.head-branch }}
+      head_sha: ${{ needs.determine-mobile-action.outputs.head-sha }}
+
+  ios-build:
+    name: "🍎 iOS Build"
+    needs: determine-mobile-action
+    if: needs.determine-mobile-action.outputs.run-ios-build == 'true'
+    uses: ./.github/workflows/ios-build.yml
+    with:
+      app_path: apps/mobile
+      head_branch: ${{ needs.determine-mobile-action.outputs.head-branch }}
+      head_sha: ${{ needs.determine-mobile-action.outputs.head-sha }}
+
+  mobile-release-update:
+    name: "🚀 Release Update"
+    needs: determine-mobile-action
+    if: needs.determine-mobile-action.outputs.run-mobile-release == 'true'
+    uses: ./.github/workflows/mobile-release-update.yml
+    with:
+      app_path: apps/mobile
+      head_branch: ${{ needs.determine-mobile-action.outputs.head-branch }}
+      head_sha: ${{ needs.determine-mobile-action.outputs.head-sha }}
+    secrets: inherit

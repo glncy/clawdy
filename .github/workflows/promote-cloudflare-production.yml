@@ -1,0 +1,179 @@
+name: "☁️ Promote Cloudflare Production"
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Release tag to promote
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Release tag to promote
+        required: true
+        type: string
+
+concurrency:
+  group: promote-cloudflare-production
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    name: "☁️ Promote production/cloudflare"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        id: checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Environment
+        id: setup
+        uses: ./.github/actions/setup-env
+
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name || inputs.tag_name }}"
+
+          if [ -z "$TAG_NAME" ]; then
+            echo "Release tag is required." >&2
+            exit 1
+          fi
+
+          git fetch origin main --tags
+
+          RELEASE_SHA="$(git rev-list -n 1 "$TAG_NAME")"
+
+          if [ -z "$RELEASE_SHA" ]; then
+            echo "Could not resolve release tag: $TAG_NAME" >&2
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$RELEASE_SHA" origin/main; then
+            echo "Release commit is not reachable from origin/main." >&2
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --heads origin production/cloudflare >/dev/null 2>&1; then
+            git fetch origin production/cloudflare:refs/remotes/origin/production/cloudflare
+
+            if ! git merge-base --is-ancestor origin/production/cloudflare "$RELEASE_SHA"; then
+              echo "production/cloudflare cannot be fast-forwarded to the release commit." >&2
+              exit 1
+            fi
+          fi
+
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          if git show-ref --verify --quiet refs/remotes/origin/production/cloudflare; then
+            echo "current_production_ref=origin/production/cloudflare" >> "$GITHUB_OUTPUT"
+          else
+            echo "current_production_ref=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Discover Cloudflare apps at release commit
+        id: discover
+        shell: bash
+        run: |
+          git checkout "${{ steps.release.outputs.release_sha }}"
+          bun run repo-scripts discover-cloudflare-apps --json > cloudflare-apps.json
+
+      - name: Check whether a Cloudflare app version changed
+        id: version-check
+        shell: bash
+        run: |
+          if [ -n "${{ steps.release.outputs.current_production_ref }}" ]; then
+            SHOULD_PROMOTE="$(bun run repo-scripts cloudflare-release-version-changed \
+              --base-ref "${{ steps.release.outputs.current_production_ref }}" \
+              --head-ref "${{ steps.release.outputs.release_sha }}" | tail -1)"
+          else
+            SHOULD_PROMOTE="$(bun run repo-scripts cloudflare-release-version-changed \
+              --head-ref "${{ steps.release.outputs.release_sha }}" | tail -1)"
+          fi
+          echo "should_promote=$SHOULD_PROMOTE" >> "$GITHUB_OUTPUT"
+
+      - name: Fail when no Cloudflare app version changed
+        id: no-version-change
+        if: steps.version-check.outputs.should_promote != 'true'
+        shell: bash
+        run: |
+          echo "The published release does not contain any discovered Cloudflare app package version changes." >&2
+          exit 1
+
+      - name: Promote production/cloudflare branch
+        id: promote
+        shell: bash
+        run: |
+          git push origin "${{ steps.release.outputs.release_sha }}:refs/heads/production/cloudflare"
+
+      - name: Verify promoted branch ref
+        id: verify
+        shell: bash
+        run: |
+          git fetch origin production/cloudflare:refs/remotes/origin/production/cloudflare
+          PROMOTED_SHA="$(git rev-parse origin/production/cloudflare)"
+
+          if [ "$PROMOTED_SHA" != "${{ steps.release.outputs.release_sha }}" ]; then
+            echo "production/cloudflare does not point to the expected release commit." >&2
+            echo "Expected: ${{ steps.release.outputs.release_sha }}" >&2
+            echo "Actual: $PROMOTED_SHA" >&2
+            exit 1
+          fi
+
+          echo "promoted_sha=$PROMOTED_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Write summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f cloudflare-apps.json ]; then
+            DISCOVERED_APPS="$(cat cloudflare-apps.json)"
+          else
+            DISCOVERED_APPS='[]'
+          fi
+
+          REASON=""
+          if [ "${{ steps.release.outcome }}" = "failure" ]; then
+            REASON="Release tag could not be resolved or validated."
+          elif [ "${{ steps.discover.outcome }}" = "failure" ]; then
+            REASON="Cloudflare app discovery failed at the release commit."
+          elif [ "${{ steps.version-check.outcome }}" = "failure" ]; then
+            REASON="Cloudflare version change detection failed."
+          elif [ "${{ steps.no-version-change.outcome }}" = "failure" ]; then
+            REASON="No discovered Cloudflare app version changed."
+          elif [ "${{ steps.promote.outcome }}" = "failure" ]; then
+            REASON="Promotion to production/cloudflare failed."
+          elif [ "${{ steps.verify.outcome }}" = "failure" ]; then
+            REASON="Promotion completed, but the production/cloudflare ref did not match the expected release SHA."
+          else
+            REASON="Cloudflare promotion completed."
+          fi
+
+          {
+            echo "## Promote Cloudflare Production"
+            echo ""
+            echo "- Release tag: ${{ steps.release.outputs.tag_name }}"
+            echo "- Release commit: ${{ steps.release.outputs.release_sha }}"
+            echo "- Production branch: production/cloudflare"
+            echo "- Promote branch: ${{ steps.version-check.outputs.should_promote }}"
+            echo "- Resolve release: ${{ steps.release.outcome }}"
+            echo "- Discover apps: ${{ steps.discover.outcome }}"
+            echo "- Version check: ${{ steps.version-check.outcome }}"
+            echo "- No version change step: ${{ steps.no-version-change.outcome }}"
+            echo "- Promote branch step: ${{ steps.promote.outcome }}"
+            echo "- Verify branch step: ${{ steps.verify.outcome }}"
+            echo "- Verified production SHA: ${{ steps.verify.outputs.promoted_sha }}"
+            echo "- Reason: $REASON"
+            echo ""
+            echo "### Discovered Cloudflare apps"
+            echo '```json'
+            printf '%s\n' "$DISCOVERED_APPS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

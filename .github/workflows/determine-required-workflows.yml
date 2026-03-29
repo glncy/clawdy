@@ -1,0 +1,57 @@
+name: "🧭 Determine Required Workflows"
+
+on:
+  workflow_call:
+    inputs:
+      base_sha:
+        description: Base SHA to compare against
+        required: true
+        type: string
+    outputs:
+      run-build:
+        description: Whether build should run
+        value: ${{ jobs.determine.outputs.run-build }}
+      run-lint:
+        description: Whether lint should run
+        value: ${{ jobs.determine.outputs.run-lint }}
+      run-type-check:
+        description: Whether type check should run
+        value: ${{ jobs.determine.outputs.run-type-check }}
+      run-test:
+        description: Whether test should run
+        value: ${{ jobs.determine.outputs.run-test }}
+
+jobs:
+  determine:
+    name: "🧭 Determine Required Workflows"
+    runs-on: ubuntu-latest
+    outputs:
+      run-build: ${{ steps.determine.outputs.run-build }}
+      run-lint: ${{ steps.determine.outputs.run-lint }}
+      run-type-check: ${{ steps.determine.outputs.run-type-check }}
+      run-test: ${{ steps.determine.outputs.run-test }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Determine required workflows
+        id: determine
+        run: |
+          RUN_BUILD=$(bun run repo-scripts should-run build --base "${{ inputs.base_sha }}" | tail -1)
+          RUN_LINT=$(bun run repo-scripts should-run lint --base "${{ inputs.base_sha }}" | tail -1)
+          RUN_TYPE_CHECK=$(bun run repo-scripts should-run type-check --base "${{ inputs.base_sha }}" | tail -1)
+          RUN_TEST=$(bun run repo-scripts should-run test --base "${{ inputs.base_sha }}" | tail -1)
+          echo "run-build=$RUN_BUILD" >> "$GITHUB_OUTPUT"
+          echo "run-lint=$RUN_LINT" >> "$GITHUB_OUTPUT"
+          echo "run-type-check=$RUN_TYPE_CHECK" >> "$GITHUB_OUTPUT"
+          echo "run-test=$RUN_TEST" >> "$GITHUB_OUTPUT"
+          echo "Required workflows:"
+          echo "  Build: $RUN_BUILD"
+          echo "  Lint: $RUN_LINT"
+          echo "  Type Check: $RUN_TYPE_CHECK"
+          echo "  Test: $RUN_TEST"

@@ -1,0 +1,202 @@
+name: "🔐 Mobile Fingerprint Check"
+
+on:
+  workflow_call:
+    inputs:
+      app_label:
+        description: Human-friendly label for the app being checked
+        required: false
+        default: ""
+        type: string
+      app_path:
+        description: App path to compare fingerprints for
+        required: true
+        type: string
+      fingerprint_profile:
+        description: Fingerprint profile to evaluate
+        required: false
+        default: ""
+        type: string
+      fingerprint_ref:
+        description: Branch or tag ref used for fingerprint metadata
+        required: false
+        default: ""
+        type: string
+      base_sha:
+        description: Base SHA used to decide whether fingerprint checking is needed
+        required: true
+        type: string
+      head_sha:
+        description: Commit SHA associated with the workflow run
+        required: true
+        type: string
+    outputs:
+      run-check:
+        description: Whether fingerprint checking was needed for the app
+        value: ${{ jobs.determine.outputs.run_check }}
+  workflow_dispatch:
+    inputs:
+      app_label:
+        description: Human-friendly label for the app being checked
+        required: false
+        default: ""
+        type: string
+      app_path:
+        description: App path to compare fingerprints for
+        required: true
+        type: string
+      fingerprint_profile:
+        description: Fingerprint profile to evaluate
+        required: false
+        default: ""
+        type: string
+      fingerprint_ref:
+        description: Branch or tag ref used for fingerprint metadata
+        required: false
+        default: ""
+        type: string
+      base_sha:
+        description: Base SHA used to decide whether fingerprint checking is needed
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  determine:
+    name: ${{ format('🧭 [{0}] Determine Fingerprint Check', inputs.app_label || inputs.app_path) }}
+    runs-on: ubuntu-latest
+    outputs:
+      run_check: ${{ steps.determine.outputs.run_check }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Determine whether fingerprint check is needed
+        id: determine
+        shell: bash
+        run: |
+          BASE_SHA="${{ inputs.base_sha }}"
+          APP_PATH="${{ inputs.app_path }}"
+
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            RUN_CHECK="false"
+          else
+            RUN_CHECK="$(bun run repo-scripts deps-changed "$APP_PATH" --base "$BASE_SHA" | tail -1)"
+          fi
+
+          echo "run_check=$RUN_CHECK" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Determine Fingerprint Check"
+            echo ""
+            echo "- App: ${{ inputs.app_label || inputs.app_path }}"
+            echo "- Path: ${APP_PATH}"
+            echo "- Compared against: ${BASE_SHA:-none}"
+            echo "- Run fingerprint check: ${RUN_CHECK}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  check:
+    name: ${{ format('🔐 [{0}] Fingerprint Check', inputs.app_label || inputs.app_path) }}
+    needs: determine
+    if: needs.determine.outputs.run_check == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Prepare Expo config for production lock evaluation
+        if: inputs.fingerprint_profile != 'production'
+        shell: bash
+        run: |
+          bun run repo-scripts prepare-expo-production-config \
+            --path "${{ inputs.app_path }}"
+
+      - name: Prepare Expo config for production fingerprint evaluation
+        if: inputs.fingerprint_profile == 'production'
+        shell: bash
+        run: |
+          bun run repo-scripts prepare-expo-production-config \
+            --path "${{ inputs.app_path }}"
+
+      - name: Determine production version lock
+        id: production_lock
+        shell: bash
+        run: |
+          LOCK_OUTPUT="$(bun run repo-scripts production-version-lock \
+            --app-path "${{ inputs.app_path }}" \
+            --head-ref "${{ inputs.head_sha }}" \
+            --ref "${{ inputs.fingerprint_ref || inputs.head_sha }}")"
+
+          echo "$LOCK_OUTPUT"
+          echo "$LOCK_OUTPUT" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Expo channel after production lock evaluation
+        if: inputs.fingerprint_profile != 'production'
+        shell: bash
+        run: |
+          bun run repo-scripts restore-expo-channel \
+            --path "${{ inputs.app_path }}" \
+            --head-ref "${{ inputs.head_sha }}"
+
+      - name: Fail when locked version no longer matches production fingerprint
+        if: steps.production_lock.outputs.state == 'locked_mismatch'
+        shell: bash
+        run: |
+          {
+            echo "## Fingerprint Check"
+            echo ""
+            echo "- App: ${{ inputs.app_label || inputs.app_path }}"
+            echo "- Path: ${{ inputs.app_path }}"
+            echo "- Compared against: ${{ inputs.base_sha }}"
+            echo "- Fingerprint profile: ${{ inputs.fingerprint_profile || 'internal' }}"
+            echo "- Fingerprint ref: ${{ inputs.fingerprint_ref || inputs.head_sha }}"
+            echo "- Production lock: ${{ steps.production_lock.outputs.state }}"
+            echo "- Reason: Version ${{ steps.production_lock.outputs.version }} already has a production fingerprint, but the current app state no longer matches it. Bump the version before introducing more changes."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Version ${{ steps.production_lock.outputs.version }} already has a production fingerprint, but the current app state no longer matches it. Bump the version before introducing more changes." >&2
+          exit 1
+
+      - name: Accept matching locked production fingerprint
+        if: steps.production_lock.outputs.state == 'locked_match'
+        shell: bash
+        run: |
+          {
+            echo "## Fingerprint Check"
+            echo ""
+            echo "- App: ${{ inputs.app_label || inputs.app_path }}"
+            echo "- Path: ${{ inputs.app_path }}"
+            echo "- Compared against: ${{ inputs.base_sha }}"
+            echo "- Fingerprint profile: ${{ inputs.fingerprint_profile || 'internal' }}"
+            echo "- Fingerprint ref: ${{ inputs.fingerprint_ref || inputs.head_sha }}"
+            echo "- Production lock: ${{ steps.production_lock.outputs.state }}"
+            echo "- Reason: Version ${{ steps.production_lock.outputs.version }} already has a matching production fingerprint, so this workflow can continue to release-update decisions without refresh or native builds."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Compare fingerprints
+        if: steps.production_lock.outputs.state == 'unlocked'
+        shell: bash
+        run: |
+          APP_PATH="${{ inputs.app_path }}"
+          PROFILE_ARG=""
+          REF_ARG=""
+
+          if [ -n "${{ inputs.fingerprint_profile }}" ]; then
+            PROFILE_ARG="--profile ${{ inputs.fingerprint_profile }}"
+          fi
+
+          if [ -n "${{ inputs.fingerprint_ref }}" ]; then
+            REF_ARG="--ref ${{ inputs.fingerprint_ref }}"
+          fi
+
+          bun run repo-scripts fingerprint compare --path "$APP_PATH" $PROFILE_ARG $REF_ARG

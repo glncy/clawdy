@@ -1,0 +1,45 @@
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "main": ".open-next/worker.js",
+    "name": "web",
+    "compatibility_date": "2024-12-30",
+    "compatibility_flags": [
+        // Enable Node.js API
+        // see https://developers.cloudflare.com/workers/configuration/compatibility-flags/#nodejs-compatibility-flag
+        "nodejs_compat",
+        // Allow to fetch URLs in your app
+        // see https://developers.cloudflare.com/workers/configuration/compatibility-flags/#global-fetch-strictly-public
+        "global_fetch_strictly_public"
+    ],
+    "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+    },
+    "services": [
+        {
+            "binding": "WORKER_SELF_REFERENCE",
+            // The service should match the "name" of your worker
+            "service": "web",
+        },
+    ],
+    "kv_namespaces": [
+        {
+            "binding": "NEXT_INC_CACHE_KV",
+            "id": "9a292488b9ca4a13aeaa57d849dbe960"
+        }
+    ],
+    "images": {
+        "binding": "IMAGES" // Optional: Enable image optimization
+    },
+    "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "logs": {
+            "enabled": true,
+            "invocation_logs": true
+        },
+        "traces": {
+            "enabled": true
+        }
+    }
+}

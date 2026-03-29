@@ -1,0 +1,130 @@
+name: "🚀 Release Update"
+
+on:
+  workflow_call:
+    inputs:
+      app_label:
+        description: Human-friendly label for the app being released
+        required: false
+        default: ""
+        type: string
+      app_path:
+        description: App path to release
+        required: true
+        type: string
+      environment_prefix:
+        description: Prefix for the GitHub Environment name
+        required: false
+        default: app-mobile
+        type: string
+      head_branch:
+        description: Branch name to release to
+        required: true
+        type: string
+      head_sha:
+        description: Commit SHA to release
+        required: true
+        type: string
+      release_channel:
+        description: Update channel to release to
+        required: false
+        default: ""
+        type: string
+  workflow_dispatch:
+    inputs:
+      app_label:
+        description: Human-friendly label for the app being released
+        required: false
+        default: ""
+        type: string
+      app_path:
+        description: App path to release
+        required: true
+        type: string
+      environment_prefix:
+        description: Prefix for the GitHub Environment name
+        required: false
+        default: app-mobile
+        type: string
+      head_branch:
+        description: Branch name to release to
+        required: false
+        type: string
+      head_sha:
+        description: Commit SHA to release
+        required: false
+        type: string
+      release_channel:
+        description: Update channel to release to
+        required: false
+        type: string
+
+concurrency:
+  group: mobile-release-update-${{ inputs.app_path }}-${{ inputs.release_channel || inputs.head_branch || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: ${{ format('🚀 [{0}] Release Update', inputs.app_label || inputs.app_path) }}
+    environment: ${{ format('{0}@{1}', inputs.environment_prefix || 'app-mobile', inputs.release_channel == 'production' && 'production' || 'main') }}
+    runs-on: ubuntu-latest
+    env:
+      EXPO_UP_GITHUB_TOKEN: ${{ secrets.EXPO_UP_GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.head_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Write app env file
+        uses: ./.github/actions/write-env-file
+        with:
+          app_path: ${{ inputs.app_path }}
+          env_file: ${{ vars.ENV_FILE }}
+
+      - name: Validate token
+        shell: bash
+        run: |
+          if [ -z "$EXPO_UP_GITHUB_TOKEN" ]; then
+            echo "Missing required secret: EXPO_UP_GITHUB_TOKEN" >&2
+            exit 1
+          fi
+
+      - name: Build workspace
+        shell: bash
+        run: bun run build
+
+      - name: Release update
+        id: release_update
+        working-directory: ${{ inputs.app_path }}
+        shell: bash
+        run: bun run expo-up release --channel "${{ inputs.release_channel || inputs.head_branch || github.ref_name }}" --token "$EXPO_UP_GITHUB_TOKEN"
+
+      - name: Verify release metadata
+        id: verify_release
+        shell: bash
+        run: |
+          bun run repo-scripts verify-mobile-release \
+            --app-path "${{ inputs.app_path }}" \
+            --head-ref "${{ inputs.head_sha || github.sha }}" \
+            --release-channel "${{ inputs.release_channel || inputs.head_branch || github.ref_name }}"
+
+      - name: Write summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Release Update"
+            echo ""
+            echo "- App: ${{ inputs.app_label || inputs.app_path }}"
+            echo "- Path: ${{ inputs.app_path }}"
+            echo "- Head ref: ${{ inputs.head_branch || github.ref_name }}"
+            echo "- Head SHA: ${{ inputs.head_sha || github.sha }}"
+            echo "- Release channel: ${{ inputs.release_channel || inputs.head_branch || github.ref_name }}"
+            echo "- Release update: ${{ steps.release_update.outcome }}"
+            echo "- Verify release metadata: ${{ steps.verify_release.outcome }}"
+          } >> "$GITHUB_STEP_SUMMARY"

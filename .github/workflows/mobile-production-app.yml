@@ -1,0 +1,205 @@
+name: "📲 Mobile Production"
+
+on:
+  workflow_call:
+    inputs:
+      app_label:
+        description: Human-friendly label for the app being released
+        required: false
+        default: ""
+        type: string
+      app_path:
+        description: App path to release
+        required: true
+        type: string
+      tag_name:
+        description: Release tag to evaluate
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      app_label:
+        description: Human-friendly label for the app being released
+        required: false
+        default: ""
+        type: string
+      app_path:
+        description: App path to release
+        required: true
+        type: string
+      tag_name:
+        description: Release tag to evaluate
+        required: true
+        type: string
+
+concurrency:
+  group: mobile-production-${{ inputs.app_path }}-${{ inputs.tag_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  resolve-release:
+    name: "🏷️ Resolve Mobile Release Tag"
+    runs-on: ubuntu-latest
+    outputs:
+      app-label: ${{ steps.resolve.outputs.app_label }}
+      app-path: ${{ steps.resolve.outputs.app_path }}
+      release-sha: ${{ steps.resolve.outputs.release_sha }}
+      tag-name: ${{ steps.resolve.outputs.tag_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: resolve
+        shell: bash
+        run: |
+          APP_PATH="${{ inputs.app_path }}"
+          APP_LABEL="${{ inputs.app_label }}"
+          TAG_NAME="${{ inputs.tag_name }}"
+
+          if [ -z "$APP_LABEL" ]; then
+            APP_LABEL="$APP_PATH"
+          fi
+
+          if [ -z "$TAG_NAME" ]; then
+            echo "Release tag is required." >&2
+            exit 1
+          fi
+
+          git fetch origin main --tags
+          RELEASE_SHA="$(git rev-list -n 1 "$TAG_NAME")"
+
+          if [ -z "$RELEASE_SHA" ]; then
+            echo "Could not resolve release tag: $TAG_NAME" >&2
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$RELEASE_SHA" origin/main; then
+            echo "Release commit is not reachable from origin/main." >&2
+            exit 1
+          fi
+
+          echo "app_label=$APP_LABEL" >> "$GITHUB_OUTPUT"
+          echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+
+  determine-action:
+    name: "📱 Determine Mobile Production Action"
+    needs: resolve-release
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.determine.outputs.action }}
+      reason: ${{ steps.determine.outputs.reason }}
+      run-android-build: ${{ steps.determine.outputs.run_android_build }}
+      run-ios-build: ${{ steps.determine.outputs.run_ios_build }}
+      run-release-update: ${{ steps.determine.outputs.run_release_update }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.resolve-release.outputs.release-sha }}
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Prepare Expo config for production fingerprint evaluation
+        shell: bash
+        run: |
+          bun run repo-scripts prepare-expo-production-config \
+            --path "${{ needs.resolve-release.outputs.app-path }}"
+
+      - name: Determine action
+        id: determine
+        shell: bash
+        run: |
+          while IFS='=' read -r key value; do
+            case "$key" in
+              action|reason|run_android_build|run_ios_build|run_release_update|package_version_changed|android_fingerprint_changed|ios_fingerprint_changed)
+                echo "$key=$value" >> "$GITHUB_OUTPUT"
+                ;;
+            esac
+          done < <(
+            bun run repo-scripts mobile-production-action \
+              --app-path "${{ needs.resolve-release.outputs.app-path }}" \
+              --head-ref "${{ needs.resolve-release.outputs.release-sha }}" \
+              --profile production \
+              --ref "${{ needs.resolve-release.outputs.tag-name }}"
+          )
+
+      - name: Write summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Mobile Production"
+            echo ""
+            echo "- App: ${{ needs.resolve-release.outputs.app-label }}"
+            echo "- Path: ${{ needs.resolve-release.outputs.app-path }}"
+            echo "- Tag: ${{ needs.resolve-release.outputs.tag-name }}"
+            echo "- Commit: ${{ needs.resolve-release.outputs.release-sha }}"
+            echo "- Action: ${{ steps.determine.outputs.action }}"
+            echo "- Android build: ${{ steps.determine.outputs.run_android_build }}"
+            echo "- iOS build: ${{ steps.determine.outputs.run_ios_build }}"
+            echo "- Release update: ${{ steps.determine.outputs.run_release_update }}"
+            echo "- Reason: ${{ steps.determine.outputs.reason }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  android-build:
+    name: "🤖 Android Build"
+    needs: [resolve-release, determine-action]
+    if: needs.determine-action.outputs.run-android-build == 'true'
+    uses: ./.github/workflows/android-build.yml
+    with:
+      app_label: ${{ needs.resolve-release.outputs.app-label }}
+      app_path: ${{ needs.resolve-release.outputs.app-path }}
+      head_branch: ${{ needs.resolve-release.outputs.tag-name }}
+      head_sha: ${{ needs.resolve-release.outputs.release-sha }}
+
+  ios-build:
+    name: "🍎 iOS Build"
+    needs: [resolve-release, determine-action]
+    if: needs.determine-action.outputs.run-ios-build == 'true'
+    uses: ./.github/workflows/ios-build.yml
+    with:
+      app_label: ${{ needs.resolve-release.outputs.app-label }}
+      app_path: ${{ needs.resolve-release.outputs.app-path }}
+      head_branch: ${{ needs.resolve-release.outputs.tag-name }}
+      head_sha: ${{ needs.resolve-release.outputs.release-sha }}
+
+  mobile-release-update:
+    name: "🚀 Release Update"
+    needs: [resolve-release, determine-action]
+    if: needs.determine-action.outputs.run-release-update == 'true'
+    uses: ./.github/workflows/mobile-release-update.yml
+    with:
+      app_label: ${{ needs.resolve-release.outputs.app-label }}
+      app_path: ${{ needs.resolve-release.outputs.app-path }}
+      head_branch: ${{ needs.resolve-release.outputs.tag-name }}
+      head_sha: ${{ needs.resolve-release.outputs.release-sha }}
+      release_channel: production
+    secrets: inherit
+
+  fingerprint-refresh:
+    name: "🧬 Fingerprint Refresh"
+    needs: [resolve-release, determine-action, android-build, ios-build]
+    if: |
+      needs.determine-action.outputs.action == 'build' &&
+      (needs.android-build.result == 'success' || needs.android-build.result == 'skipped') &&
+      (needs.ios-build.result == 'success' || needs.ios-build.result == 'skipped')
+    uses: ./.github/workflows/mobile-fingerprint-refresh-pr.yml
+    with:
+      app_label: ${{ needs.resolve-release.outputs.app-label }}
+      app_path: ${{ needs.resolve-release.outputs.app-path }}
+      base_sha: ${{ needs.resolve-release.outputs.release-sha }}
+      fingerprint_profile: production
+      fingerprint_ref: ${{ needs.resolve-release.outputs.tag-name }}
+      force_refresh: true
+      head_sha: ${{ needs.resolve-release.outputs.release-sha }}

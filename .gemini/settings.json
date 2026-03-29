@@ -1,0 +1,32 @@
+{
+  "context": {
+    "fileName": [
+      ".agents/rules/main-development.md",
+      ".agents/rules/product-strategy.md"
+    ]
+  },
+  "mcpServers": {
+    "mobile-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mobilenext/mobile-mcp@latest"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "env": {}
+    },
+    "heroui-native": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@heroui/native-mcp@latest"
+      ]
+    }
+  }
+}

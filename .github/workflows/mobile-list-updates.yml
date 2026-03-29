@@ -1,0 +1,61 @@
+name: "📦 [apps/mobile] List Updates"
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Expo-up channel to inspect
+        required: true
+        type: string
+
+jobs:
+  list:
+    name: "📦 List Updates"
+    runs-on: ubuntu-latest
+    env:
+      EXPO_UP_GITHUB_TOKEN: ${{ secrets.EXPO_UP_GITHUB_TOKEN }}
+      CHANNEL: ${{ inputs.channel }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Validate inputs
+        shell: bash
+        run: |
+          if [ -z "$EXPO_UP_GITHUB_TOKEN" ]; then
+            echo "Missing required secret: EXPO_UP_GITHUB_TOKEN" >&2
+            exit 1
+          fi
+
+          if [ -z "$CHANNEL" ]; then
+            echo "Channel is required." >&2
+            exit 1
+          fi
+
+      - name: Fetch update history
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          script -q -e -c "bun run expo-up history --channel \"$CHANNEL\" --token \"$EXPO_UP_GITHUB_TOKEN\"" /dev/null | tee expo-up-history.txt
+
+      - name: Write summary
+        if: ${{ always() }}
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          {
+            echo "## [apps/mobile] List Updates"
+            echo ""
+            echo "- Channel: ${CHANNEL}"
+            echo ""
+            if [ -f expo-up-history.txt ]; then
+              echo '```text'
+              cat expo-up-history.txt
+              echo '```'
+            else
+              echo "History output was not generated. Check the job logs for details."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

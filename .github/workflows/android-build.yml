@@ -1,0 +1,82 @@
+name: "🤖 Android Build"
+
+on:
+  workflow_call:
+    inputs:
+      app_label:
+        description: Human-friendly label for the app being built
+        required: false
+        default: ""
+        type: string
+      app_path:
+        description: App path associated with the build
+        required: true
+        type: string
+      environment_prefix:
+        description: Prefix for the GitHub Environment name
+        required: false
+        default: app-mobile
+        type: string
+      head_branch:
+        description: Branch name associated with the build
+        required: true
+        type: string
+      head_sha:
+        description: Commit SHA associated with the build
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      app_label:
+        description: Human-friendly label for the app being built
+        required: false
+        default: ""
+        type: string
+      app_path:
+        description: App path associated with the build
+        required: true
+        type: string
+      environment_prefix:
+        description: Prefix for the GitHub Environment name
+        required: false
+        default: app-mobile
+        type: string
+      head_branch:
+        description: Branch name associated with the build
+        required: false
+        type: string
+      head_sha:
+        description: Commit SHA associated with the build
+        required: false
+        type: string
+
+jobs:
+  build:
+    name: ${{ format('🤖 [{0}] Android Build', inputs.app_label || inputs.app_path) }}
+    environment: ${{ format('{0}@{1}', inputs.environment_prefix || 'app-mobile', startsWith(inputs.head_branch, format('{0}@', inputs.environment_prefix || 'app-mobile')) && 'production' || 'main') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.head_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Write app env file
+        uses: ./.github/actions/write-env-file
+        with:
+          app_path: ${{ inputs.app_path }}
+          env_file: ${{ vars.ENV_FILE }}
+
+      - name: Placeholder Android build step
+        shell: bash
+        run: |
+          echo "${{ inputs.app_path }}/fingerprints/android.json needs a new entry."
+          echo "App: ${{ inputs.app_label || inputs.app_path }}"
+          echo "Path: ${{ inputs.app_path }}"
+          echo "Branch: ${{ inputs.head_branch || github.ref_name }}"
+          echo "Commit: ${{ inputs.head_sha || github.sha }}"
+          echo "This is the placeholder Android build step."

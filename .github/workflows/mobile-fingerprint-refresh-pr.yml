@@ -1,0 +1,322 @@
+name: "🧬 Mobile Fingerprint Refresh PR"
+
+on:
+  workflow_call:
+    inputs:
+      app_label:
+        description: Human-friendly label for the app being checked
+        required: false
+        default: ""
+        type: string
+      app_path:
+        description: App path to compare fingerprints for
+        required: true
+        type: string
+      fingerprint_profile:
+        description: Fingerprint profile to evaluate
+        required: false
+        default: ""
+        type: string
+      fingerprint_ref:
+        description: Branch or tag ref used for fingerprint metadata
+        required: false
+        default: ""
+        type: string
+      force_refresh:
+        description: Force a fingerprint history refresh regardless of deps-change gating
+        required: false
+        default: false
+        type: boolean
+      base_sha:
+        description: Base SHA used to decide whether fingerprint checking is needed
+        required: true
+        type: string
+      head_sha:
+        description: Commit SHA associated with the main branch run
+        required: true
+        type: string
+    outputs:
+      run-check:
+        description: Whether fingerprint checking was needed for the app
+        value: ${{ jobs.refresh.outputs.run-check }}
+      fingerprints-match:
+        description: Whether committed fingerprints already matched the current app state
+        value: ${{ jobs.refresh.outputs.fingerprints-match }}
+      pr-url:
+        description: Pull request URL when a refresh PR was created or updated
+        value: ${{ jobs.refresh.outputs.pr-url }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    name: ${{ format('🧬 [{0}] Fingerprint Refresh', inputs.app_label || inputs.app_path) }}
+    runs-on: ubuntu-latest
+    outputs:
+      run-check: ${{ steps.determine.outputs.run_check }}
+      fingerprints-match: ${{ steps.finalize.outputs.fingerprints_match }}
+      pr-url: ${{ steps.pr.outputs.pr_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.head_sha }}
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Determine whether fingerprint check is needed
+        id: determine
+        shell: bash
+        run: |
+          BASE_SHA="${{ inputs.base_sha }}"
+          APP_PATH="${{ inputs.app_path }}"
+
+          if [ "${{ inputs.force_refresh }}" = "true" ]; then
+            RUN_CHECK="true"
+          elif [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            RUN_CHECK="false"
+          else
+            RUN_CHECK="$(bun run repo-scripts deps-changed "$APP_PATH" --base "$BASE_SHA" | tail -1)"
+          fi
+
+          echo "run_check=$RUN_CHECK" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare Expo config for production lock evaluation
+        if: |
+          steps.determine.outputs.run_check == 'true' &&
+          inputs.fingerprint_profile != 'production'
+        shell: bash
+        run: |
+          bun run repo-scripts prepare-expo-production-config \
+            --path "${{ inputs.app_path }}"
+
+      - name: Prepare Expo config for production fingerprint evaluation
+        if: |
+          steps.determine.outputs.run_check == 'true' &&
+          inputs.fingerprint_profile == 'production'
+        shell: bash
+        run: |
+          bun run repo-scripts prepare-expo-production-config \
+            --path "${{ inputs.app_path }}"
+
+      - name: Determine production version lock
+        if: steps.determine.outputs.run_check == 'true'
+        id: production_lock
+        shell: bash
+        run: |
+          LOCK_OUTPUT="$(bun run repo-scripts production-version-lock \
+            --app-path "${{ inputs.app_path }}" \
+            --head-ref "${{ inputs.head_sha }}" \
+            --ref "${{ inputs.fingerprint_ref || inputs.head_sha }}")"
+
+          echo "$LOCK_OUTPUT"
+          echo "$LOCK_OUTPUT" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Expo channel after production lock evaluation
+        if: |
+          steps.determine.outputs.run_check == 'true' &&
+          inputs.fingerprint_profile != 'production'
+        shell: bash
+        run: |
+          bun run repo-scripts restore-expo-channel \
+            --path "${{ inputs.app_path }}" \
+            --head-ref "${{ inputs.head_sha }}"
+
+      - name: Fail when locked version no longer matches production fingerprint
+        if: steps.production_lock.outputs.state == 'locked_mismatch'
+        shell: bash
+        run: |
+          {
+            echo "## Fingerprint Refresh"
+            echo ""
+            echo "- App: ${{ inputs.app_label || inputs.app_path }}"
+            echo "- Path: ${{ inputs.app_path }}"
+            echo "- Compared against: ${{ inputs.base_sha }}"
+            echo "- Fingerprint profile: ${{ inputs.fingerprint_profile || 'internal' }}"
+            echo "- Fingerprint ref: ${{ inputs.fingerprint_ref || 'main' }}"
+            echo "- Latest commit changed app/deps: ${{ steps.determine.outputs.run_check }}"
+            echo "- Production lock: ${{ steps.production_lock.outputs.state }}"
+            echo "- Reason: Version ${{ steps.production_lock.outputs.version }} already has a production fingerprint, but the current app state no longer matches it. Bump the version before introducing more changes."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Version ${{ steps.production_lock.outputs.version }} already has a production fingerprint, but the current app state no longer matches it. Bump the version before introducing more changes." >&2
+          exit 1
+
+      - name: Compare fingerprints
+        id: compare
+        if: |
+          steps.determine.outputs.run_check == 'true' &&
+          steps.production_lock.outputs.state == 'unlocked'
+        shell: bash
+        run: |
+          APP_PATH="${{ inputs.app_path }}"
+          PROFILE_ARG=""
+          REF_ARG=""
+
+          if [ -n "${{ inputs.fingerprint_profile }}" ]; then
+            PROFILE_ARG="--profile ${{ inputs.fingerprint_profile }}"
+          fi
+
+          if [ -n "${{ inputs.fingerprint_ref }}" ]; then
+            REF_ARG="--ref ${{ inputs.fingerprint_ref }}"
+          fi
+
+          if bun run repo-scripts fingerprint compare --path "$APP_PATH" $PROFILE_ARG $REF_ARG; then
+            echo "fingerprints_match=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "fingerprints_match=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Finalize fingerprint result
+        id: finalize
+        shell: bash
+        run: |
+          if [ "${{ steps.determine.outputs.run_check }}" != "true" ]; then
+            FINGERPRINTS_MATCH="false"
+          elif [ "${{ steps.production_lock.outputs.state }}" = "locked_match" ]; then
+            FINGERPRINTS_MATCH="true"
+          else
+            FINGERPRINTS_MATCH="${{ steps.compare.outputs.fingerprints_match }}"
+          fi
+
+          echo "fingerprints_match=$FINGERPRINTS_MATCH" >> "$GITHUB_OUTPUT"
+
+      - name: Generate refreshed fingerprints
+        if: |
+          steps.determine.outputs.run_check == 'true' &&
+          steps.production_lock.outputs.state == 'unlocked' &&
+          steps.compare.outputs.fingerprints_match == 'false'
+        shell: bash
+        run: |
+          PROFILE_ARG=""
+          REF_ARG=""
+
+          if [ -n "${{ inputs.fingerprint_profile }}" ]; then
+            PROFILE_ARG="--profile ${{ inputs.fingerprint_profile }}"
+          fi
+
+          if [ -n "${{ inputs.fingerprint_ref }}" ]; then
+            REF_ARG="--ref ${{ inputs.fingerprint_ref }}"
+          fi
+
+          bun run repo-scripts fingerprint generate \
+            --path "${{ inputs.app_path }}" \
+            --head-ref "${{ inputs.head_sha }}" \
+            $PROFILE_ARG \
+            $REF_ARG
+
+      - name: Restore Expo channel after production fingerprint evaluation
+        if: |
+          steps.determine.outputs.run_check == 'true' &&
+          steps.production_lock.outputs.state == 'unlocked' &&
+          steps.compare.outputs.fingerprints_match == 'false' &&
+          inputs.fingerprint_profile == 'production'
+        shell: bash
+        run: |
+          bun run repo-scripts restore-expo-channel \
+            --path "${{ inputs.app_path }}" \
+            --head-ref "${{ inputs.head_sha }}"
+
+      - name: Commit refreshed fingerprints
+        id: commit
+        if: |
+          steps.determine.outputs.run_check == 'true' &&
+          steps.production_lock.outputs.state == 'unlocked' &&
+          steps.compare.outputs.fingerprints_match == 'false'
+        shell: bash
+        run: |
+          APP_PATH="${{ inputs.app_path }}"
+          APP_SLUG="${APP_PATH//\//-}"
+          HEAD_SHA="${{ inputs.head_sha }}"
+          SHORT_SHA="${HEAD_SHA:0:7}"
+          BRANCH_NAME="chore/update-${APP_SLUG}-fingerprints-${SHORT_SHA}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$BRANCH_NAME"
+
+          for file in \
+            "$APP_PATH/app.json" \
+            "$APP_PATH/app.config.ts" \
+            "$APP_PATH/app.config.js" \
+            "$APP_PATH/fingerprints/android.json" \
+            "$APP_PATH/fingerprints/ios.json"; do
+            if [ -f "$file" ]; then
+              git add "$file"
+            fi
+          done
+
+          if git diff --cached --quiet; then
+            echo "branch_name=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git commit -m "chore(${APP_SLUG}): refresh fingerprints"
+          git push --force-with-lease origin "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update fingerprint refresh PR
+        id: pr
+        if: steps.commit.outputs.branch_name != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const head = `${owner}:${{ steps.commit.outputs.branch_name }}`;
+            const base = "main";
+            const appPath = "${{ inputs.app_path }}";
+            const profileLabel =
+              "${{ inputs.fingerprint_profile }}" === "production" ? "production" : "internal";
+
+            const { data: pulls } = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: "open",
+              head,
+              base,
+            });
+
+            if (pulls.length > 0) {
+              core.setOutput("pr_url", pulls[0].html_url);
+              return;
+            }
+
+            const { data: pull } = await github.rest.pulls.create({
+              owner,
+              repo,
+              head: ${{ toJson(steps.commit.outputs.branch_name) }},
+              base,
+              title: `chore(${appPath.replace(/\//g, "-")}): refresh fingerprints (${profileLabel})`,
+              body: [
+                "## Summary",
+                `- refresh committed fingerprint history for \`${appPath}\``,
+                "",
+                "## Notes",
+                `- generated automatically for profile \`${{ inputs.fingerprint_profile || 'internal' }}\``,
+                `- source ref: \`${{ inputs.fingerprint_ref || 'main' }}\``,
+                "- merge this PR before continuing mobile follow-up releases for this app",
+              ].join("\n"),
+            });
+
+            core.setOutput("pr_url", pull.html_url);
+
+      - name: Write summary
+        shell: bash
+        run: |
+          {
+            echo "## Fingerprint Refresh"
+            echo ""
+            echo "- App: ${{ inputs.app_label || inputs.app_path }}"
+            echo "- Path: ${{ inputs.app_path }}"
+            echo "- Compared against: ${{ inputs.base_sha }}"
+            echo "- Fingerprint profile: ${{ inputs.fingerprint_profile || 'internal' }}"
+            echo "- Fingerprint ref: ${{ inputs.fingerprint_ref || 'main' }}"
+            echo "- Latest commit changed app/deps: ${{ steps.determine.outputs.run_check }}"
+            echo "- Production lock: ${{ steps.production_lock.outputs.state || 'unlocked' }}"
+            echo "- Fingerprints match: ${{ steps.finalize.outputs.fingerprints_match || 'n/a' }}"
+            echo "- Refresh PR: ${{ steps.pr.outputs.pr_url || 'none' }}"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,29 @@
+name: "🗃️ Run Command"
+
+on:
+  workflow_call:
+    inputs:
+      command:
+        description: Command to run
+        required: true
+        type: string
+      working_directory:
+        description: Optional working directory
+        required: false
+        default: .
+        type: string
+
+jobs:
+  run:
+    name: "🗃️ Run Command"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Run command
+        working-directory: ${{ inputs.working_directory }}
+        run: ${{ inputs.command }}

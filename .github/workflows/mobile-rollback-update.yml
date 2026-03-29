@@ -1,0 +1,77 @@
+name: "↩️ [apps/mobile] Rollback Update"
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Expo-up channel to rollback
+        required: true
+        type: string
+      to_build:
+        description: Optional build ID to rollback to
+        required: false
+        type: string
+      embedded:
+        description: Roll back to the embedded native build
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  rollback:
+    name: "↩️ Rollback Update"
+    runs-on: ubuntu-latest
+    env:
+      EXPO_UP_GITHUB_TOKEN: ${{ secrets.EXPO_UP_GITHUB_TOKEN }}
+      CHANNEL: ${{ inputs.channel }}
+      TO_BUILD: ${{ inputs.to_build }}
+      EMBEDDED: ${{ inputs.embedded }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Validate inputs
+        shell: bash
+        run: |
+          if [ -z "$EXPO_UP_GITHUB_TOKEN" ]; then
+            echo "Missing required secret: EXPO_UP_GITHUB_TOKEN" >&2
+            exit 1
+          fi
+
+          if [ -z "$CHANNEL" ]; then
+            echo "Channel is required." >&2
+            exit 1
+          fi
+
+          if [ "$EMBEDDED" = "true" ] && [ -n "$TO_BUILD" ]; then
+            echo "Use either 'embedded' or 'to_build', not both." >&2
+            exit 1
+          fi
+
+      - name: Rollback update
+        working-directory: apps/mobile
+        shell: bash
+        run: |
+          if [ "$EMBEDDED" = "true" ]; then
+            bun run expo-up rollback --channel "$CHANNEL" --embedded --token "$EXPO_UP_GITHUB_TOKEN"
+          elif [ -n "$TO_BUILD" ]; then
+            bun run expo-up rollback --channel "$CHANNEL" --to "$TO_BUILD" --token "$EXPO_UP_GITHUB_TOKEN"
+          else
+            bun run expo-up rollback --channel "$CHANNEL" --token "$EXPO_UP_GITHUB_TOKEN"
+          fi
+
+      - name: Write summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          {
+            echo "## [apps/mobile] Rollback Update"
+            echo ""
+            echo "- Channel: ${CHANNEL}"
+            echo "- Target build: ${TO_BUILD:-latest available rollback target}"
+            echo "- Embedded rollback: ${EMBEDDED}"
+            echo "- Triggered by: ${GITHUB_ACTOR}"
+          } >> "$GITHUB_STEP_SUMMARY"

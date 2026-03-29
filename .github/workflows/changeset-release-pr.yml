@@ -1,0 +1,34 @@
+name: "📝 Changeset Release PR"
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-pr:
+    name: "📝 Create Changeset Release PR"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
+
+      - name: Create or update release PR
+        uses: changesets/action@v1
+        with:
+          commit: Version Packages
+          title: Version Packages
+          # Keep GitHub Releases off while `.changeset/config.json` uses `"changelog": false`.
+          createGithubReleases: false
+          version: bun run changeset:version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
