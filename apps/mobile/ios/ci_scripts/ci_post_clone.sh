@@ -21,8 +21,8 @@ fi
 
 if ! command -v node >/dev/null 2>&1; then
   export HOMEBREW_NO_AUTO_UPDATE=1
-  brew install node@20
-  export PATH="/opt/homebrew/opt/node@20/bin:/usr/local/opt/node@20/bin:$PATH"
+  brew install node@24
+  export PATH="/opt/homebrew/opt/node@24/bin:/usr/local/opt/node@24/bin:$PATH"
 fi
 
 cd "$REPO_ROOT"
