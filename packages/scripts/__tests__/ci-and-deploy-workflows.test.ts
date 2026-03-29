@@ -102,4 +102,14 @@ describe("ci and deploy workflows", () => {
     expect(script).toContain("bun x expo prebuild -p ios --clean --non-interactive");
     expect(script).not.toContain("pod install");
   });
+
+  it("provides the Xcode Cloud post-clone entrypoint at the repository root", async () => {
+    const script = await readFile(
+      new URL("../../../ci_scripts/ci_post_clone.sh", import.meta.url),
+      "utf8",
+    );
+
+    expect(script).toContain("apps/mobile/ci_scripts/ci_post_clone.sh");
+    expect(script).toContain("exec");
+  });
 });

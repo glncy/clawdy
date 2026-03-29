@@ -46,9 +46,10 @@ Xcode Cloud owns the real Apple-native archive/sign/distribution steps.
 
 The post-clone setup script lives at:
 
+- [`ci_scripts/ci_post_clone.sh`](../../ci_scripts/ci_post_clone.sh)
 - [`apps/mobile/ci_scripts/ci_post_clone.sh`](../../apps/mobile/ci_scripts/ci_post_clone.sh)
 
-That script currently runs:
+Xcode Cloud discovers the repo-root script first. That wrapper delegates to the mobile-specific script, which currently runs:
 
 ```sh
 bun install --frozen-lockfile
@@ -203,9 +204,10 @@ This environment is used only when Xcode Cloud reports a backup-build-eligible c
 
 In Xcode Cloud, ensure the mobile workflow runs the repo post-clone script:
 
+- [`ci_scripts/ci_post_clone.sh`](../../ci_scripts/ci_post_clone.sh)
 - [`apps/mobile/ci_scripts/ci_post_clone.sh`](../../apps/mobile/ci_scripts/ci_post_clone.sh)
 
-That script prepares the monorepo and generates the iOS project during the cloud build.
+The repo-root script is the Xcode Cloud entrypoint and delegates to the mobile-specific script. Together they prepare the monorepo and generate the iOS project during the cloud build.
 
 ## Consequences
 
