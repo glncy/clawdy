@@ -6,6 +6,7 @@ IOS_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)"
 MOBILE_ROOT="$(CDPATH= cd -- "$IOS_ROOT/.." && pwd)"
 REPO_ROOT="$(CDPATH= cd -- "$MOBILE_ROOT/../.." && pwd)"
 
+export CI="${CI:-1}"
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
@@ -18,9 +19,18 @@ if ! command -v bun >/dev/null 2>&1; then
   trap - EXIT
 fi
 
+if ! command -v node >/dev/null 2>&1; then
+  export HOMEBREW_NO_AUTO_UPDATE=1
+  brew install node@20
+  export PATH="/opt/homebrew/opt/node@20/bin:/usr/local/opt/node@20/bin:$PATH"
+fi
+
 cd "$REPO_ROOT"
+node -v
+bun -v
 bun install --frozen-lockfile
 bun run build
 
 cd "$MOBILE_ROOT"
-bun x expo prebuild -p ios --clean --non-interactive
+node --no-warnings --eval "require('expo/bin/autolinking')" expo-modules-autolinking react-native-config --json --platform ios > /tmp/expo-autolinking-ios.json
+bun x expo prebuild -p ios --clean

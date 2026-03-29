@@ -98,8 +98,11 @@ describe("ci and deploy workflows", () => {
       "utf8",
     );
 
+    expect(script).toContain("export CI");
+    expect(script).toContain("command -v node");
     expect(script).toContain("bun run build");
-    expect(script).toContain("bun x expo prebuild -p ios --clean --non-interactive");
+    expect(script).toContain("expo-modules-autolinking react-native-config --json --platform ios");
+    expect(script).toContain("bun x expo prebuild -p ios --clean");
     expect(script).not.toContain("pod install");
   });
 
@@ -109,7 +112,8 @@ describe("ci and deploy workflows", () => {
       "utf8",
     );
 
+    expect(script).toContain("node --no-warnings --eval");
     expect(script).toContain("bun run build");
-    expect(script).toContain("bun x expo prebuild -p ios --clean --non-interactive");
+    expect(script).toContain("bun x expo prebuild -p ios --clean");
   });
 });
