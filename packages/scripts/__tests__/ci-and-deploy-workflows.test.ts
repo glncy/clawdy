@@ -64,4 +64,25 @@ describe("ci and deploy workflows", () => {
     expect(verifyStepIndex).toBeGreaterThan(releaseStepIndex);
     expect(workflow).toContain("bun run repo-scripts verify-mobile-release");
   });
+
+  it("triggers Xcode Cloud instead of using the placeholder iOS build step", async () => {
+    const workflow = await readWorkflow("ios-build.yml");
+
+    expect(workflow).toContain("- name: Validate Xcode Cloud configuration");
+    expect(workflow).toContain("- name: Trigger Xcode Cloud build");
+    expect(workflow).toContain("fallback-placeholder");
+    expect(workflow).toContain("bun run repo-scripts trigger-xcode-cloud-build");
+    expect(workflow).not.toContain("This is the placeholder iOS build step.");
+  });
+
+  it("documents the Xcode Cloud post-clone script in the mobile app", async () => {
+    const script = await readFile(
+      new URL("../../../apps/mobile/ci_scripts/ci_post_clone.sh", import.meta.url),
+      "utf8",
+    );
+
+    expect(script).toContain("bun run build");
+    expect(script).toContain("bun x expo prebuild -p ios --clean --non-interactive");
+    expect(script).not.toContain("pod install");
+  });
 });

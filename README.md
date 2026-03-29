@@ -79,6 +79,11 @@ The updates worker also needs its project mapping in `apps/updates-worker/src/in
 ### GitHub Actions
 - `ENV_FILE` GitHub Environment variable for mobile app builds/releases
 - `EXPO_UP_GITHUB_TOKEN` GitHub secret for `expo-up` release, history, and rollback workflows
+- `APP_STORE_CONNECT_ISSUER_ID` GitHub secret for App Store Connect API access
+- `APP_STORE_CONNECT_KEY_ID` GitHub secret for App Store Connect API access
+- `APP_STORE_CONNECT_PRIVATE_KEY` GitHub secret for App Store Connect API access
+- `XCODE_CLOUD_WORKFLOW_ID` GitHub Environment variable for the mobile app's Xcode Cloud workflow
+- `app-mobile-fallback@main` and `app-mobile-fallback@production` GitHub Environments with required reviewers for approved iOS fallback runs
 
 ## Upstream Sync
 
