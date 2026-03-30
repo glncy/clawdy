@@ -251,7 +251,7 @@ The GitHub Actions job lets Fastlane `setup_ci` and `match` install the signing 
 To seed the iOS signing branch in the private signing repo, run locally:
 
 ```bash
-cd /Users/glncy/codes/glncy/clawdy/packages/scripts/fastlane
+cd packages/scripts/fastlane
 
 bundle install
 
@@ -265,7 +265,7 @@ bundle exec fastlane match appstore
 If the iOS signing assets already exist and should be imported into the signing repo instead, run:
 
 ```bash
-cd /Users/glncy/codes/glncy/clawdy/packages/scripts/fastlane
+cd packages/scripts/fastlane
 
 bundle install
 

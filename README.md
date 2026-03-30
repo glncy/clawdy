@@ -102,7 +102,7 @@ For the Fastlane `match` setup, keep this split:
 To seed the private signing repo for iOS with Fastlane `match`, run:
 
 ```bash
-cd /Users/glncy/codes/glncy/clawdy/packages/scripts/fastlane
+cd packages/scripts/fastlane
 
 bundle install
 
@@ -116,7 +116,7 @@ bundle exec fastlane match appstore
 If you already have an existing signing certificate and provisioning profile to import instead of creating or syncing one through `match`, run:
 
 ```bash
-cd /Users/glncy/codes/glncy/clawdy/packages/scripts/fastlane
+cd packages/scripts/fastlane
 
 bundle install
 

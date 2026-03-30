@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { parse } from "yaml";
 
 async function readWorkflow(fileName: string) {
   return readFile(new URL(`../../../.github/workflows/${fileName}`, import.meta.url), "utf8");
@@ -78,23 +79,51 @@ describe("ci and deploy workflows", () => {
 
   it("routes iOS builds through GitHub Actions and Xcode Cloud with one-way fallback", async () => {
     const workflow = await readWorkflow("ios-build.yml");
+    const parsedWorkflow = parse(workflow) as {
+      jobs: Record<
+        string,
+        {
+          environment?: string;
+          "runs-on"?: string;
+          steps?: Array<{ name?: string; uses?: string }>;
+        }
+      >;
+    };
 
     expect(workflow).toContain("resolve-build-strategy:");
     expect(workflow).toContain("repository_visibility_override:");
     expect(workflow).toContain("approve-primary-xcode-build:");
     expect(workflow).toContain("approve-fallback-xcode-build:");
-    expect(workflow).toContain("environment: ${{ format('{0}@ios-build-xcode', inputs.environment_prefix) }}");
+    expect(parsedWorkflow.jobs["approve-primary-xcode-build"]?.environment).toBe(
+      "${{ format('{0}@ios-build-xcode', inputs.environment_prefix) }}",
+    );
+    expect(parsedWorkflow.jobs["approve-fallback-xcode-build"]?.environment).toBe(
+      "${{ format('{0}@ios-build-xcode', inputs.environment_prefix) }}",
+    );
     expect(workflow).toContain("approve-primary-github-actions-build:");
     expect(workflow).toContain("approve-fallback-github-actions-build:");
-    expect(workflow).toContain("environment: ${{ format('{0}@ios-build-gha', inputs.environment_prefix) }}");
+    expect(parsedWorkflow.jobs["approve-primary-github-actions-build"]?.environment).toBe(
+      "${{ format('{0}@ios-build-gha', inputs.environment_prefix) }}",
+    );
+    expect(parsedWorkflow.jobs["approve-fallback-github-actions-build"]?.environment).toBe(
+      "${{ format('{0}@ios-build-gha', inputs.environment_prefix) }}",
+    );
     expect(workflow).toContain("primary_build_path");
     expect(workflow).toContain("repo_visibility");
     expect(workflow).toContain("effective_repo_visibility");
     expect(workflow).toContain("backup_build_eligible");
     expect(workflow).toContain('if [ "$FALLBACK_USED" = "true" ]; then');
-    expect(workflow).toContain("runs-on: macos");
-    expect(workflow).toContain("- name: Build and upload iOS app on GitHub Actions");
-    expect(workflow).toContain("uses: ./.github/actions/ios-build-gha");
+    expect(parsedWorkflow.jobs["primary-github-actions-build"]?.["runs-on"]).toBe("macos-latest");
+    expect(
+      parsedWorkflow.jobs["primary-github-actions-build"]?.steps?.some(
+        (step) => step.name === "Build and upload iOS app on GitHub Actions" && step.uses === "./.github/actions/ios-build-gha",
+      ),
+    ).toBe(true);
+    expect(
+      parsedWorkflow.jobs["fallback-github-actions-build"]?.steps?.some(
+        (step) => step.name === "Build and upload iOS app on GitHub Actions" && step.uses === "./.github/actions/ios-build-gha",
+      ),
+    ).toBe(true);
     expect(workflow).toContain("IOS_MATCH_GIT_URL");
     expect(workflow).toContain("IOS_MATCH_GIT_BRANCH");
     expect(workflow).toContain("MATCH_PASSWORD");
