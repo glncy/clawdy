@@ -183,7 +183,7 @@ describe("ci and deploy workflows", () => {
     expect(fastfile).toContain('setup_ci if ENV["CI"] == "true"');
     expect(fastfile).not.toContain("match(");
     expect(fastfile).toContain("build_app(");
-    expect(fastfile).toContain('export_method: "app-store"');
+    expect(fastfile).toContain('export_method: "app-store-connect"');
     expect(fastfile).toContain('signingStyle: "automatic"');
     expect(fastfile).toContain("-allowProvisioningUpdates");
     expect(fastfile).toContain("-authenticationKeyPath");

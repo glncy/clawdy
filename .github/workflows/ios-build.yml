@@ -144,7 +144,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.head_sha || github.sha }}
-          fetch-depth: 0
 
       - name: Build and upload iOS app on GitHub Actions
         id: build_upload
@@ -353,7 +352,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.head_sha || github.sha }}
-          fetch-depth: 0
 
       - name: Build and upload iOS app on GitHub Actions
         id: build_upload

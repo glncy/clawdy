@@ -42,25 +42,18 @@ platform :ios do
 
     setup_ci if ENV["CI"] == "true"
 
-    # Write the API key to a temporary file for xcodebuild authentication
-    api_key_path = File.join(Dir.tmpdir, "AuthKey_#{key_id}.p8")
-    File.write(api_key_path, private_key.gsub("\\n", "\n"))
-
     build_app(
       workspace: workspaces.first,
       scheme: scheme,
       archive_path: File.join(Dir.tmpdir, "#{scheme}.xcarchive"),
-      export_method: "app-store",
+      export_method: "app-store-connect",
       export_options: {
         signingStyle: "automatic",
       },
       output_directory: File.join(Dir.tmpdir, "exported-ios"),
       output_name: "#{scheme}.ipa",
-      xcargs: "-allowProvisioningUpdates -authenticationKeyPath '#{api_key_path}' -authenticationKeyID '#{key_id}' -authenticationKeyIssuerID '#{issuer_id}'",
+      xcargs: "-allowProvisioningUpdates -authenticationKeyPath '#{api_key[:key_filepath]}' -authenticationKeyID '#{key_id}' -authenticationKeyIssuerID '#{issuer_id}'",
     )
-
-    # Clean up the temporary API key file
-    File.delete(api_key_path) if File.exist?(api_key_path)
 
     ipa_path = Actions.lane_context[SharedValues::IPA_OUTPUT_PATH]
     UI.user_error!("Fastlane did not produce an IPA") if ipa_path.to_s.empty?
