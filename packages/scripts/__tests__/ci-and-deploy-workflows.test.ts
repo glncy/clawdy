@@ -114,11 +114,17 @@ describe("ci and deploy workflows", () => {
     expect(workflow).toContain("backup_build_eligible");
     expect(workflow).toContain('if [ "$FALLBACK_USED" = "true" ]; then');
     expect(parsedWorkflow.jobs["primary-github-actions-build"]?.["runs-on"]).toBe("macos-latest");
+    expect(parsedWorkflow.jobs["primary-github-actions-build"]?.environment).toBe(
+      "${{ format('{0}@{1}', inputs.environment_prefix, startsWith(inputs.head_branch, format('{0}@', inputs.environment_prefix)) && 'production' || 'main') }}",
+    );
     expect(
       parsedWorkflow.jobs["primary-github-actions-build"]?.steps?.some(
         (step) => step.name === "Build and upload iOS app on GitHub Actions" && step.uses === "./.github/actions/ios-build-gha",
       ),
     ).toBe(true);
+    expect(parsedWorkflow.jobs["fallback-github-actions-build"]?.environment).toBe(
+      "${{ format('{0}@{1}', inputs.environment_prefix, startsWith(inputs.head_branch, format('{0}@', inputs.environment_prefix)) && 'production' || 'main') }}",
+    );
     expect(
       parsedWorkflow.jobs["fallback-github-actions-build"]?.steps?.some(
         (step) => step.name === "Build and upload iOS app on GitHub Actions" && step.uses === "./.github/actions/ios-build-gha",
