@@ -1,0 +1,105 @@
+require "fileutils"
+require "shellwords"
+require "tmpdir"
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Archive and upload the Expo iOS app from GitHub Actions"
+  lane :ci_build do
+    app_path = ENV["APP_PATH"]
+    UI.user_error!("APP_PATH is required") if app_path.to_s.empty?
+
+    ios_path = File.join(app_path, "ios")
+    workspaces = Dir[File.join(ios_path, "*.xcworkspace")]
+    UI.user_error!("Expected exactly one Xcode workspace in #{ios_path}, found #{workspaces.length}") unless workspaces.length == 1
+
+    workspace = workspaces.first
+    scheme = File.basename(workspace, ".xcworkspace")
+
+    key_id = ENV["APP_STORE_CONNECT_KEY_ID"]
+    issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"]
+    private_key = ENV["APP_STORE_CONNECT_PRIVATE_KEY"]
+    match_git_url = ENV["MATCH_GIT_URL"]
+    UI.user_error!("APP_STORE_CONNECT_KEY_ID is required") if key_id.to_s.empty?
+    UI.user_error!("APP_STORE_CONNECT_ISSUER_ID is required") if issuer_id.to_s.empty?
+    UI.user_error!("APP_STORE_CONNECT_PRIVATE_KEY is required") if private_key.to_s.empty?
+    UI.user_error!("MATCH_GIT_URL is required") if match_git_url.to_s.empty?
+
+    auth_key_dir = File.join(Dir.tmpdir, "fastlane-auth-keys")
+    FileUtils.mkdir_p(auth_key_dir)
+    auth_key_path = File.join(auth_key_dir, "AuthKey_#{key_id}.p8")
+    File.write(auth_key_path, private_key.gsub("\\n", "\n"))
+
+    archive_path = File.join(Dir.tmpdir, "#{scheme}.xcarchive")
+    output_directory = File.join(Dir.tmpdir, "exported-ios")
+
+    api_key = app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_content: private_key.gsub("\\n", "\n"),
+      is_key_content_base64: false,
+      in_house: false,
+    )
+
+    setup_ci if ENV["CI"] == "true"
+
+    match(
+      api_key: api_key,
+      type: "appstore",
+      readonly: true,
+      git_url: match_git_url,
+      git_branch: ENV["MATCH_GIT_BRANCH"],
+      shallow_clone: true,
+      clone_branch_directly: true,
+    )
+
+    build_app(
+      workspace: workspace,
+      scheme: scheme,
+      configuration: "Release",
+      clean: true,
+      destination: "generic/platform=iOS",
+      archive_path: archive_path,
+      export_method: "app-store",
+      export_options: {
+        signingStyle: "automatic",
+        stripSwiftSymbols: true,
+        uploadSymbols: true,
+      },
+      output_directory: output_directory,
+      output_name: "#{scheme}.ipa",
+      xcargs: [
+        "-allowProvisioningUpdates",
+        "-authenticationKeyPath #{auth_key_path.shellescape}",
+        "-authenticationKeyID #{key_id.shellescape}",
+        "-authenticationKeyIssuerID #{issuer_id.shellescape}",
+        "CODE_SIGN_STYLE=Automatic",
+      ].join(" "),
+      export_xcargs: [
+        "-allowProvisioningUpdates",
+        "-authenticationKeyPath #{auth_key_path.shellescape}",
+        "-authenticationKeyID #{key_id.shellescape}",
+        "-authenticationKeyIssuerID #{issuer_id.shellescape}",
+      ].join(" "),
+    )
+
+    ipa_path = Actions.lane_context[SharedValues::IPA_OUTPUT_PATH]
+    UI.user_error!("Fastlane did not produce an IPA") if ipa_path.to_s.empty?
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: ipa_path,
+      skip_waiting_for_build_processing: true,
+      distribute_external: false,
+      notify_external_testers: false,
+    )
+
+    github_output = ENV["GITHUB_OUTPUT"]
+    return if github_output.to_s.empty?
+
+    File.open(github_output, "a") do |file|
+      file.puts("ipa_path=#{ipa_path}")
+    end
+  end
+end

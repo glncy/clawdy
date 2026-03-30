@@ -12,7 +12,8 @@ We want:
 
 - GitHub Actions to remain the orchestration layer for CI
 - repository visibility to decide which iOS path runs first
-- a backup GitHub path when Xcode Cloud cannot start a build because of compute-hour or start-build limits
+- a real GitHub-hosted iOS archive/upload path for public repositories
+- a backup path when the selected primary iOS path cannot continue
 - explicit human approval before any path is used
 
 The repo uses a reusable iOS workflow that triggers Xcode Cloud through the App Store Connect API rather than archiving the app directly on GitHub-hosted runners.
@@ -60,13 +61,17 @@ with supported values:
 
 GitHub Actions is the primary iOS path for public repositories.
 
-Today that path is still placeholder-only. The workflow treats it as a first-class path for routing and approvals, but it does not yet perform a real iOS archive.
-
-When the GitHub Actions path is selected first, the workflow:
+When the GitHub Actions path is selected, the workflow:
 
 1. pauses on `app-mobile@ios-build-gha`
-2. reports that GitHub Actions was selected as the primary path
-3. marks the Xcode Cloud path as eligible fallback because the GitHub Actions path is still placeholder-only
+2. runs on a macOS runner
+3. installs workspace dependencies and builds the monorepo
+4. verifies Expo iOS autolinking and runs Expo prebuild
+5. runs Fastlane `match` against the private signing repo
+6. archives the app with automatic signing and App Store Connect API authentication
+7. exports an IPA and uploads it to App Store Connect
+
+The GitHub Actions path uploads the build to TestFlight/App Store Connect in v1. It does not yet auto-assign the uploaded build to internal TestFlight groups.
 
 ### Xcode Cloud Path
 
@@ -76,7 +81,7 @@ The post-clone setup script lives at:
 
 - [`apps/mobile/ios/ci_scripts/ci_post_clone.sh`](../../apps/mobile/ios/ci_scripts/ci_post_clone.sh)
 
-Xcode Cloud resolves the post-clone entrypoint from the iOS project root. That script currently runs:
+Xcode Cloud resolves the post-clone entrypoint from the iOS project root:
 
 ```sh
 export CI=1
@@ -88,7 +93,7 @@ bun x expo prebuild -p ios --clean
 
 This means:
 
-- monorepo dependencies are installed in the Xcode Cloud environment
+- Xcode Cloud keeps its native `ci_post_clone.sh` convention
 - the workspace build runs before native generation
 - Expo prebuild generates the iOS project during CI
 
@@ -124,6 +129,8 @@ Store these as repository secrets, not environment secrets. The iOS trigger runs
 - `APP_STORE_CONNECT_ISSUER_ID`
 - `APP_STORE_CONNECT_KEY_ID`
 - `APP_STORE_CONNECT_PRIVATE_KEY`
+- `MATCH_PASSWORD`
+- `MATCH_GIT_HTTP_CREDENTIAL`
 
 ### Variables
 
@@ -131,6 +138,8 @@ Store these as GitHub Environment variables on the stage environments that execu
 
 - `XCODE_CLOUD_WORKFLOW_ID`
 - `ENV_FILE` when mobile builds need environment values written into the app
+- `IOS_MATCH_GIT_URL` for the private Fastlane `match` signing repository
+- `IOS_MATCH_GIT_BRANCH` when the signing repo uses a branch other than `ios`
 
 ### Protected Environments
 
@@ -143,7 +152,7 @@ Create these GitHub Environments with required reviewers:
 
 ### 1. Create An App Store Connect API Key
 
-You need an App Store Connect API key with access to Xcode Cloud and workflow/build metadata.
+You need an App Store Connect API key with access to Xcode Cloud, build metadata, and App Store Connect uploads.
 
 In App Store Connect:
 
@@ -162,6 +171,8 @@ From that key, configure these repository-level GitHub secrets:
   - the contents of the downloaded `.p8` file
   - store the whole key body as the secret value
   - escaped newline handling is supported by the workflow script
+
+Use a Team Key for this setup. The GitHub-hosted iOS upload path assumes an API key that works for CI upload and provisioning operations across the app account.
 
 ### 2. Find The Xcode Cloud Workflow ID
 
@@ -193,13 +204,77 @@ The reusable workflow writes this content into the app before triggering Xcode C
 
 ### 3a. Keep Secrets Out Of The Stage Environment
 
-Do not store these App Store Connect credentials on `app-mobile@main` or `app-mobile@production`:
+Do not store these signing credentials on `app-mobile@main` or `app-mobile@production`:
 
 - `APP_STORE_CONNECT_ISSUER_ID`
 - `APP_STORE_CONNECT_KEY_ID`
 - `APP_STORE_CONNECT_PRIVATE_KEY`
+- `MATCH_PASSWORD`
+- `MATCH_GIT_HTTP_CREDENTIAL`
 
-Keep those three values as repository secrets instead. The reusable iOS workflow can read repository secrets reliably, while environment-scoped secrets are a poor fit for this setup.
+Keep those values as repository secrets instead. The reusable iOS workflow can read repository secrets reliably, while environment-scoped secrets are a poor fit for this setup.
+
+### 3b. Export The App Store Distribution Certificate
+
+For the GitHub Actions macOS build, automatic signing still needs CI signing material on a fresh runner.
+
+Configure Fastlane `match` to use your private signing repository, then set:
+
+- `IOS_MATCH_GIT_URL`
+  - HTTPS URL for the private signing repo
+- `IOS_MATCH_GIT_BRANCH`
+  - signing branch to use for Fastlane `match`
+- `MATCH_PASSWORD`
+  - the Fastlane `match` encryption password
+  - this decrypts the certificates and provisioning profiles stored inside the signing repo after the repo is cloned
+  - choose and keep a stable secret string when you initialize `match`
+- `MATCH_GIT_HTTP_CREDENTIAL`
+  - plain `username:token` credential for the signing repo
+  - this is only for cloning the private signing repo over HTTPS
+  - the workflow base64-encodes it at runtime and exposes it to Fastlane as `MATCH_GIT_BASIC_AUTHORIZATION`
+
+Example `MATCH_GIT_HTTP_CREDENTIAL` source value before GitHub stores it:
+
+```text
+your-github-username:your-github-pat
+```
+
+The two secrets serve different purposes:
+
+- `MATCH_GIT_HTTP_CREDENTIAL`
+  - grants CI read access to the private signing repo
+- `MATCH_PASSWORD`
+  - decrypts the encrypted signing assets after the repo has been cloned
+
+The GitHub Actions job lets Fastlane `setup_ci` and `match` install the signing material before `build_app` runs.
+
+To seed the iOS signing branch in the private signing repo, run locally:
+
+```bash
+cd /Users/glncy/codes/glncy/clawdy/packages/scripts/fastlane
+
+bundle install
+
+export MATCH_GIT_URL="https://github.com/glncy/clawdi-signing.git"
+export MATCH_GIT_BRANCH="ios"
+export MATCH_PASSWORD="<choose-a-strong-password>"
+
+bundle exec fastlane match appstore
+```
+
+If the iOS signing assets already exist and should be imported into the signing repo instead, run:
+
+```bash
+cd /Users/glncy/codes/glncy/clawdy/packages/scripts/fastlane
+
+bundle install
+
+export MATCH_GIT_URL="https://github.com/glncy/clawdi-signing.git"
+export MATCH_GIT_BRANCH="ios"
+export MATCH_PASSWORD="<use-the-same-password-you-will-store-in-github>"
+
+bundle exec fastlane match import
+```
 
 ### 4. Configure The iOS Build Approval Environment
 
@@ -256,12 +331,12 @@ The iOS-project script is the Xcode Cloud entrypoint when the workflow is bound 
 - repository visibility can steer build cost toward the cheaper path
 - both iOS paths are explicitly approved and auditable
 - GitHub still provides orchestration, visibility, and approval controls
+- GitHub-hosted public repos can build and upload iOS artifacts without first handing off to Xcode Cloud
 - Xcode Cloud remains available as the Apple-native path for private repos and fallback cases
 
 ### Tradeoffs
 
-- the GitHub Actions iOS path is still placeholder-only
-- public repositories still depend on Xcode Cloud today if a real archive is needed
+- GitHub-hosted iOS builds now require a Fastlane `match` signing repository plus match credentials
 - there is no proactive remaining-hours check in this implementation
 - both paths now require separate approvals, which adds one more manual gate when fallback occurs
 - each run allows only one fallback, so a failed secondary path ends the run instead of chaining into another backup attempt
