@@ -20,8 +20,18 @@ platform :ios do
     UI.user_error!("Expected exactly one Xcode workspace in #{ios_path}, found #{workspaces.length}") unless workspaces.length == 1
     UI.user_error!("Xcode project not found at #{ios_path}") if xcodeproj.nil?
 
-    app_identifier = get_product_bundle_id(project_filepath: xcodeproj)
-    UI.user_error!("app_identifier not found in Xcode project") if app_identifier.to_s.empty?
+    # Extract app_identifier from the project.pbxproj
+    pbxproj_path = File.join(xcodeproj, "project.pbxproj")
+    UI.user_error!("project.pbxproj not found at #{pbxproj_path}") unless File.exist?(pbxproj_path)
+    # Read the file and find the first line matching PRODUCT_BUNDLE_IDENTIFIER
+    app_identifier = nil
+    File.readlines(pbxproj_path).each do |line|
+      if line =~ /PRODUCT_BUNDLE_IDENTIFIER\s*=\s*([^;]+);/
+        app_identifier = $1.strip
+        break
+      end
+    end
+    UI.user_error!("app_identifier not found in project.pbxproj") if app_identifier.to_s.empty?
 
     workspace = workspaces.first
     scheme = File.basename(workspace, ".xcworkspace")
