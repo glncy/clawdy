@@ -1,7 +1,4 @@
-require "fileutils"
-require "shellwords"
 require "tmpdir"
-require "json"
 
 default_platform(:ios)
 
@@ -20,50 +17,35 @@ platform :ios do
     UI.user_error!("Expected exactly one Xcode workspace in #{ios_path}, found #{workspaces.length}") unless workspaces.length == 1
     UI.user_error!("Xcode project not found at #{ios_path}") if xcodeproj.nil?
 
-    # Extract app_identifier from the project.pbxproj
+    # Extract app_identifier from the project.pbxproj using a regex
     pbxproj_path = File.join(xcodeproj, "project.pbxproj")
-    UI.user_error!("project.pbxproj not found at #{pbxproj_path}") unless File.exist?(pbxproj_path)
-    # Read the file and find the first line matching PRODUCT_BUNDLE_IDENTIFIER
-    app_identifier = nil
-    File.readlines(pbxproj_path).each do |line|
-      if line =~ /PRODUCT_BUNDLE_IDENTIFIER\s*=\s*([^;]+);/
-        app_identifier = $1.strip
-        break
-      end
-    end
+    app_identifier = File.read(pbxproj_path)[/PRODUCT_BUNDLE_IDENTIFIER\s*=\s*([^;]+);/, 1]&.strip
     UI.user_error!("app_identifier not found in project.pbxproj") if app_identifier.to_s.empty?
 
-    workspace = workspaces.first
-    scheme = File.basename(workspace, ".xcworkspace")
+    scheme = File.basename(workspaces.first, ".xcworkspace")
 
+    # Capture environment variables for validation and reuse
     key_id = ENV["APP_STORE_CONNECT_KEY_ID"]
     issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"]
     private_key = ENV["APP_STORE_CONNECT_PRIVATE_KEY"]
     match_git_url = ENV["MATCH_GIT_URL"]
+
     UI.user_error!("APP_STORE_CONNECT_KEY_ID is required") if key_id.to_s.empty?
     UI.user_error!("APP_STORE_CONNECT_ISSUER_ID is required") if issuer_id.to_s.empty?
     UI.user_error!("APP_STORE_CONNECT_PRIVATE_KEY is required") if private_key.to_s.empty?
     UI.user_error!("MATCH_GIT_URL is required") if match_git_url.to_s.empty?
-    private_key_content = private_key.gsub("\\n", "\n")
-
-    auth_key_dir = File.join(Dir.tmpdir, "fastlane-auth-keys")
-    FileUtils.mkdir_p(auth_key_dir)
-    auth_key_path = File.join(auth_key_dir, "AuthKey_#{key_id}.p8")
-    File.write(auth_key_path, private_key_content)
-
-    archive_path = File.join(Dir.tmpdir, "#{scheme}.xcarchive")
-    output_directory = File.join(Dir.tmpdir, "exported-ios")
 
     api_key = app_store_connect_api_key(
       key_id: key_id,
       issuer_id: issuer_id,
-      key_content: private_key_content,
+      key_content: private_key.gsub("\\n", "\n"),
       is_key_content_base64: false,
       in_house: false,
     )
 
     setup_ci if ENV["CI"] == "true"
 
+    # Install Private Key/Certificate via match, but use automatic signing for target-awareness
     match(
       api_key: api_key,
       type: "appstore",
@@ -76,33 +58,19 @@ platform :ios do
     )
 
     build_app(
-      workspace: workspace,
+      workspace: workspaces.first,
       scheme: scheme,
-      configuration: "Release",
       clean: true,
-      destination: "generic/platform=iOS",
-      archive_path: archive_path,
+      archive_path: File.join(Dir.tmpdir, "#{scheme}.xcarchive"),
       export_method: "app-store",
-      api_key: api_key,
       export_options: {
         signingStyle: "automatic",
         stripSwiftSymbols: true,
         uploadSymbols: true,
       },
-      output_directory: output_directory,
+      output_directory: File.join(Dir.tmpdir, "exported-ios"),
       output_name: "#{scheme}.ipa",
-      xcargs: [
-        "-allowProvisioningUpdates",
-        "-authenticationKeyPath #{auth_key_path.shellescape}",
-        "-authenticationKeyID #{key_id.shellescape}",
-        "-authenticationKeyIssuerID #{issuer_id.shellescape}",
-      ].join(" "),
-      export_xcargs: [
-        "-allowProvisioningUpdates",
-        "-authenticationKeyPath #{auth_key_path.shellescape}",
-        "-authenticationKeyID #{key_id.shellescape}",
-        "-authenticationKeyIssuerID #{issuer_id.shellescape}",
-      ].join(" "),
+      xcargs: "-allowProvisioningUpdates"
     )
 
     ipa_path = Actions.lane_context[SharedValues::IPA_OUTPUT_PATH]
@@ -119,8 +87,6 @@ platform :ios do
     github_output = ENV["GITHUB_OUTPUT"]
     return if github_output.to_s.empty?
 
-    File.open(github_output, "a") do |file|
-      file.puts("ipa_path=#{ipa_path}")
-    end
+    File.open(github_output, "a") { |f| f.puts("ipa_path=#{ipa_path}") }
   end
 end
