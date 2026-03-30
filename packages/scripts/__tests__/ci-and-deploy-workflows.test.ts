@@ -181,11 +181,14 @@ describe("ci and deploy workflows", () => {
     expect(fastfile).toContain('workspaces = Dir[File.join(ios_path, "*.xcworkspace")]');
     expect(fastfile).toContain('scheme = File.basename(workspaces.first, ".xcworkspace")');
     expect(fastfile).toContain('setup_ci if ENV["CI"] == "true"');
-    expect(fastfile).toContain("match(");
-    expect(fastfile).toContain("app_identifier: app_identifier");
+    expect(fastfile).not.toContain("match(");
     expect(fastfile).toContain("build_app(");
     expect(fastfile).toContain('export_method: "app-store"');
     expect(fastfile).toContain('signingStyle: "automatic"');
+    expect(fastfile).toContain("-allowProvisioningUpdates");
+    expect(fastfile).toContain("-authenticationKeyPath");
+    expect(fastfile).toContain("-authenticationKeyID");
+    expect(fastfile).toContain("-authenticationKeyIssuerID");
     expect(fastfile).toContain("upload_to_testflight(");
     expect(fastfile).not.toContain("appleTeamId");
   });
