@@ -67,9 +67,10 @@ When the GitHub Actions path is selected, the workflow:
 2. runs on a macOS runner
 3. installs workspace dependencies and builds the monorepo
 4. verifies Expo iOS autolinking and runs Expo prebuild
-5. runs Fastlane `match` against the private signing repo
-6. archives the app with automatic signing and App Store Connect API authentication
-7. exports an IPA and uploads it to App Store Connect
+5. runs Fastlane `match` against the private signing repo to install the distribution certificate and provisioning profile
+6. switches the Xcode project to manual signing with the match-installed profile
+7. archives and exports the app with manual signing
+8. uploads the IPA to TestFlight via App Store Connect API
 
 The GitHub Actions path uploads the build to TestFlight/App Store Connect in v1. It does not yet auto-assign the uploaded build to internal TestFlight groups.
 
@@ -216,7 +217,7 @@ Keep those values as repository secrets instead. The reusable iOS workflow can r
 
 ### 3b. Export The App Store Distribution Certificate
 
-For the GitHub Actions macOS build, automatic signing still needs CI signing material on a fresh runner.
+For the GitHub Actions macOS build, manual signing requires the distribution certificate and provisioning profile to be installed on a fresh runner.
 
 Configure Fastlane `match` to use your private signing repository, then set:
 
@@ -246,7 +247,7 @@ The two secrets serve different purposes:
 - `MATCH_PASSWORD`
   - decrypts the encrypted signing assets after the repo has been cloned
 
-The GitHub Actions job lets Fastlane `setup_ci` and `match` install the signing material before `build_app` runs.
+The GitHub Actions job lets Fastlane `setup_ci` and `match` install the signing material, then `update_code_signing_settings` switches the Xcode project to manual signing before `build_app` runs.
 
 To seed the iOS signing branch in the private signing repo, run locally:
 

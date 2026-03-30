@@ -177,10 +177,16 @@ jobs:
             echo "github_actions_status=backup_build_eligible" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Fail job if build failed
+        if: always() && steps.build_upload.outcome != 'success'
+        shell: bash
+        run: exit 1
+
   approve-fallback-xcode-build:
     name: ${{ format('✅ [{0}] Approve Xcode Cloud Fallback', inputs.app_label || inputs.app_path) }}
     needs: [primary-github-actions-build, resolve-build-strategy]
     if: |
+      always() &&
       needs.resolve-build-strategy.outputs.primary_build_path == 'github_actions' &&
       needs.primary-github-actions-build.outputs.backup_build_eligible == 'true'
     environment: ${{ format('{0}@ios-build-xcode', inputs.environment_prefix) }}
@@ -217,10 +223,13 @@ jobs:
       - primary-github-actions-build
       - resolve-build-strategy
     if: |
-      needs.resolve-build-strategy.outputs.primary_build_path == 'xcode_cloud' ||
+      always() &&
       (
-        needs.resolve-build-strategy.outputs.primary_build_path == 'github_actions' &&
-        needs.primary-github-actions-build.outputs.backup_build_eligible == 'true'
+        needs.resolve-build-strategy.outputs.primary_build_path == 'xcode_cloud' ||
+        (
+          needs.resolve-build-strategy.outputs.primary_build_path == 'github_actions' &&
+          needs.primary-github-actions-build.outputs.backup_build_eligible == 'true'
+        )
       )
     environment: ${{ format('{0}@{1}', inputs.environment_prefix, startsWith(inputs.head_branch, format('{0}@', inputs.environment_prefix)) && 'production' || 'main') }}
     runs-on: ubuntu-latest

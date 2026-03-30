@@ -61,6 +61,9 @@ runs:
         restore-keys: |
           ${{ runner.os }}-cocoapods-
 
+    # NOTE: This validation is intentionally kept as a fast-fail safety net.
+    # Fastlane's ci_build lane performs the same checks, but this catches
+    # missing secrets before the slower build/prebuild steps run.
     - name: Validate GitHub Actions iOS configuration
       shell: bash
       env:

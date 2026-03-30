@@ -17,9 +17,13 @@ platform :ios do
     UI.user_error!("Expected exactly one Xcode workspace in #{ios_path}, found #{workspaces.length}") unless workspaces.length == 1
     UI.user_error!("Xcode project not found at #{ios_path}") if xcodeproj.nil?
 
-    # Extract app_identifier from the project.pbxproj using a regex
+    # Extract app_identifier from the main app target in project.pbxproj
+    # Reads the pbxproj once and finds PRODUCT_BUNDLE_IDENTIFIER within the Release configuration
+    # of the target matching the scheme name, falling back to the first match if not found.
     pbxproj_path = File.join(xcodeproj, "project.pbxproj")
-    app_identifier = File.read(pbxproj_path)[/PRODUCT_BUNDLE_IDENTIFIER\s*=\s*([^;]+);/, 1]&.strip
+    pbxproj_content = File.read(pbxproj_path)
+    app_identifier = pbxproj_content[/\/\* Release \*\/.*?PRODUCT_BUNDLE_IDENTIFIER\s*=\s*([^;]+);/m, 1]&.strip ||
+                     pbxproj_content[/PRODUCT_BUNDLE_IDENTIFIER\s*=\s*([^;]+);/, 1]&.strip
     UI.user_error!("app_identifier not found in project.pbxproj") if app_identifier.to_s.empty?
 
     scheme = File.basename(workspaces.first, ".xcworkspace")
@@ -55,8 +59,8 @@ platform :ios do
       clone_branch_directly: true,
     )
 
-    team_id = CredentialsManager::AppfileConfig.try_fetch_value(:team_id) ||
-              ENV["sigh_#{app_identifier}_appstore_team-id"]
+    team_id = File.read(pbxproj_path)[/DEVELOPMENT_TEAM\s*=\s*([^;]+);/, 1]&.strip
+    UI.user_error!("DEVELOPMENT_TEAM not found in project.pbxproj") if team_id.to_s.empty?
 
     update_code_signing_settings(
       path: xcodeproj,
@@ -89,8 +93,6 @@ platform :ios do
       api_key: api_key,
       ipa: ipa_path,
       skip_waiting_for_build_processing: true,
-      distribute_external: false,
-      notify_external_testers: false,
     )
 
     github_output = ENV["GITHUB_OUTPUT"]
