@@ -75,6 +75,10 @@ platform :ios do
       clone_branch_directly: true,
     )
 
+    mapping = Actions.lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
+    profile_name = mapping[app_identifier]
+    UI.user_error!("Could not find profile for #{app_identifier}") if profile_name.to_s.empty?
+
     build_app(
       workspace: workspace,
       scheme: scheme,
@@ -85,7 +89,7 @@ platform :ios do
       export_method: "app-store",
       export_options: {
         signingStyle: "manual",
-        provisioningProfiles: Actions.lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING],
+        provisioningProfiles: mapping,
         stripSwiftSymbols: true,
         uploadSymbols: true,
       },
@@ -98,6 +102,8 @@ platform :ios do
         "-authenticationKeyIssuerID #{issuer_id.shellescape}",
         "CODE_SIGN_STYLE=Manual",
         "CODE_SIGN_IDENTITY=\"Apple Distribution\"",
+        "PROVISIONING_PROFILE_SPECIFIER=#{profile_name.shellescape}",
+        "DEVELOPMENT_TEAM=U5H755ZAHL",
       ].join(" "),
       export_xcargs: [
         "-allowProvisioningUpdates",
