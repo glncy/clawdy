@@ -55,6 +55,18 @@ platform :ios do
       clone_branch_directly: true,
     )
 
+    team_id = CredentialsManager::AppfileConfig.try_fetch_value(:team_id) ||
+              ENV["sigh_#{app_identifier}_appstore_team-id"]
+
+    update_code_signing_settings(
+      path: xcodeproj,
+      use_automatic_signing: false,
+      team_id: team_id,
+      bundle_identifier: app_identifier,
+      profile_name: "match AppStore #{app_identifier}",
+      code_sign_identity: "Apple Distribution",
+    )
+
     build_app(
       workspace: workspaces.first,
       scheme: scheme,

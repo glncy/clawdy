@@ -11,7 +11,10 @@
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "me.ttap.clawdi",
       "buildNumber": "7",
-      "appleTeamId": "U5H755ZAHL"
+      "appleTeamId": "U5H755ZAHL",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
