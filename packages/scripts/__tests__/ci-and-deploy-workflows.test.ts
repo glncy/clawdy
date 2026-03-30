@@ -113,7 +113,7 @@ describe("ci and deploy workflows", () => {
     expect(workflow).toContain("effective_repo_visibility");
     expect(workflow).toContain("backup_build_eligible");
     expect(workflow).toContain('if [ "$FALLBACK_USED" = "true" ]; then');
-    expect(parsedWorkflow.jobs["primary-github-actions-build"]?.["runs-on"]).toBe("macos-latest");
+    expect(parsedWorkflow.jobs["primary-github-actions-build"]?.["runs-on"]).toBe("macos-26");
     expect(parsedWorkflow.jobs["primary-github-actions-build"]?.environment).toBe(
       "${{ format('{0}@{1}', inputs.environment_prefix, startsWith(inputs.head_branch, format('{0}@', inputs.environment_prefix)) && 'production' || 'main') }}",
     );

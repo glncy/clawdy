@@ -133,7 +133,7 @@ jobs:
     needs: [approve-primary-github-actions-build, resolve-build-strategy]
     if: needs.resolve-build-strategy.outputs.primary_build_path == 'github_actions'
     environment: ${{ format('{0}@{1}', inputs.environment_prefix, startsWith(inputs.head_branch, format('{0}@', inputs.environment_prefix)) && 'production' || 'main') }}
-    runs-on: macos-latest
+    runs-on: macos-26
     outputs:
       backup_build_eligible: ${{ steps.classify.outputs.backup_build_eligible }}
       build_path: ${{ steps.classify.outputs.build_path }}
@@ -344,7 +344,7 @@ jobs:
       needs.resolve-build-strategy.outputs.primary_build_path == 'xcode_cloud' &&
       needs.primary-or-fallback-xcode-cloud.outputs.backup_build_eligible == 'true'
     environment: ${{ format('{0}@{1}', inputs.environment_prefix, startsWith(inputs.head_branch, format('{0}@', inputs.environment_prefix)) && 'production' || 'main') }}
-    runs-on: macos-latest
+    runs-on: macos-26
     outputs:
       build_path: ${{ steps.classify.outputs.build_path }}
       github_actions_status: ${{ steps.classify.outputs.github_actions_status }}
