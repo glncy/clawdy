@@ -38,7 +38,11 @@ platform :ios do
 
     setup_ci if ENV["CI"] == "true"
 
-    auth_flags = "-allowProvisioningUpdates -authenticationKeyPath '#{api_key[:key_filepath]}' -authenticationKeyID '#{key_id}' -authenticationKeyIssuerID '#{issuer_id}'"
+    # Write the API key to disk so xcodebuild can use it for authentication
+    api_key_path = File.join(Dir.tmpdir, "AuthKey_#{key_id}.p8")
+    File.write(api_key_path, private_key.gsub("\\n", "\n"))
+
+    auth_flags = "-allowProvisioningUpdates -authenticationKeyPath '#{api_key_path}' -authenticationKeyID '#{key_id}' -authenticationKeyIssuerID '#{issuer_id}'"
 
     build_app(
       workspace: workspaces.first,
