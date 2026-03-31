@@ -35,7 +35,7 @@
   - `metadata`: key-value store (trialStartDate, balance, preferences)
 - [ ] Set up Drizzle migrations
 - [ ] Implement Safe to Spend calculation engine:
-  - `safeToSpend = (currentBalance - sumUpcomingBills30Days) / daysRemaining`
+  - `safeToSpend = (currentBalance - sumUpcomingBills30Days) / Math.max(1, daysRemaining)`
 - [ ] Multi-currency support (store currency code per transaction, display in user's preferred currency)
 - [ ] Device capability detection:
   - `expo-device` → `Device.totalMemory`
@@ -111,7 +111,7 @@
   - Generate JSON file with complete database dump
   - Share via system share sheet
 - [ ] **Delete Everything:**
-  - Single confirmation ("This will permanently delete all your data")
+  - Destructive confirmation (e.g., type "DELETE" to permanently wipe all data)
   - Drop all data from SQLite tables
   - Reset metadata
   - Return to fresh state

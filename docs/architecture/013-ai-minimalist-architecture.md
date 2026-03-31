@@ -61,7 +61,7 @@ Phase 1.5: Local LLM → Remote LLM (user API key) → Structured Manual Input
 
 The primary metric is forward-looking ("Safe to Spend") rather than backward-looking (charts/graphs).
 
-- **Formula:** `(Current Balance - Sum of Upcoming Bills in 30 days) / Days Remaining`
+- **Formula:** `(Current Balance - Sum of Upcoming Bills in 30 days) / max(1, Days Remaining)`
 - **Color-as-Data:** Background color maps to financial health state (green → amber → red). A child doesn't need to read numbers to understand "green = good."
 - **Rationale:** Users say "just tell me what I can safely spend today." That's the entire hero screen.
 

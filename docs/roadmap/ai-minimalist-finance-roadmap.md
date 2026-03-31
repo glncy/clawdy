@@ -11,7 +11,7 @@
 ### Features
 
 - **Safe to Spend Dashboard**
-  - Hero number: `(Current Balance - Upcoming Bills in 30 days) / Days Remaining`
+  - Hero number: `(Current Balance - Upcoming Bills in 30 days) / max(1, Days Remaining)`
   - Color-as-data background: green (healthy) → amber (caution) → red (tight)
   - 30-day rolling balance projection
 
