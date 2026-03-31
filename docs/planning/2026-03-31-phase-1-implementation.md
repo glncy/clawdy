@@ -2,27 +2,27 @@
 
 ## Tech Stack
 
-| Component | Package | Purpose |
-|-----------|---------|---------|
-| Database | `expo-sqlite` + `drizzle-orm` | Local-first storage with type-safe schemas |
-| Local LLM | `llama.rn` + Qwen 2.5 0.5B Q4_K_M | On-device transaction parsing |
-| Voice STT | `@jamsch/expo-speech-recognition` | Offline speech-to-text |
-| Icons | `phosphor-react-native` | Replace lucide-react-native |
-| Notifications | `expo-notifications` | Local reminders and alerts |
-| Device Info | `expo-device` | RAM check for LLM capability |
-| State | `zustand` | Global state management |
-| Styling | `uniwind` + HeroUI Native | Tailwind-style + component library |
+| Component     | Package                           | Purpose                                    |
+| ------------- | --------------------------------- | ------------------------------------------ |
+| Database      | `expo-sqlite` + `drizzle-orm`     | Local-first storage with type-safe schemas |
+| Local LLM     | `llama.rn` + Qwen 2.5 0.5B Q4_K_M | On-device transaction parsing              |
+| Voice STT     | `@jamsch/expo-speech-recognition` | Offline speech-to-text                     |
+| Icons         | `phosphor-react-native`           | Replace lucide-react-native                |
+| Notifications | `expo-notifications`              | Local reminders and alerts                 |
+| Device Info   | `expo-device`                     | RAM check for LLM capability               |
+| State         | `zustand`                         | Global state management                    |
+| Styling       | `uniwind` + HeroUI Native         | Tailwind-style + component library         |
 
 ## Screen Architecture
 
 3 screens + 1 input modal. Daily usage = 1 screen + 1 modal.
 
-| Screen | Contents |
-|--------|----------|
-| **Home** | Safe to Spend hero number, color-as-data background (green→amber→red), Bill Countdown list, floating input FAB |
-| **History** | Transaction list + recurring bills (tabbed or segmented control), swipe to edit/delete |
-| **Settings** | Premium status, notification preferences, export data, delete data, theme toggle, AI provider info |
-| **Input Modal** | Bottom sheet overlay from any screen. Text field + voice button → AI parse → confirmation card → save |
+| Screen          | Contents                                                                                                       |
+| --------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Home**        | Safe to Spend hero number, color-as-data background (green→amber→red), Bill Countdown list, floating input FAB |
+| **History**     | Transaction list + recurring bills (tabbed or segmented control), swipe to edit/delete                         |
+| **Settings**    | Premium status, notification preferences, export data, delete data, theme toggle, AI provider info             |
+| **Input Modal** | Bottom sheet overlay from any screen. Text field + voice button → AI parse → confirmation card → save          |
 
 ## Day-by-Day Breakdown
 
