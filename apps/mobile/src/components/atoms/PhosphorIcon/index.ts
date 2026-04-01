@@ -1,0 +1,1 @@
+export { PhosphorIcon } from "./PhosphorIcon";

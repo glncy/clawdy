@@ -1,0 +1,76 @@
+export interface Transaction {
+  id: string;
+  type: "income" | "expense";
+  amount: number;
+  currency: string;
+  item: string;
+  category: string;
+  date: string;
+  note?: string;
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  currency: string;
+  targetDate: string;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  icon: string;
+  isCompleted: boolean;
+}
+
+export interface Mood {
+  id: string;
+  type: "morning" | "night";
+  rating: number; // 1-5
+  date: string;
+}
+
+export interface Priority {
+  id: string;
+  text: string;
+  type: "must" | "win" | "overdue";
+  isCompleted: boolean;
+}
+
+export interface Contact {
+  id: string;
+  name: string;
+  relationship: string;
+  birthday?: string;
+  lastTalkedDaysAgo: number;
+  giftIdea?: string;
+  thingsTheyLove?: string;
+}
+
+export interface SleepLog {
+  id: string;
+  hours: number;
+  minutes: number;
+  date: string;
+}
+
+export interface Spark {
+  id: string;
+  text: string;
+  domain: string;
+  isCompleted: boolean;
+}
+
+export interface QuickListItem {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+}
+
+export interface DomainScore {
+  label: string;
+  icon: string;
+  progress: number;
+}

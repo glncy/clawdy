@@ -1,4 +1,4 @@
-import { Text as RNText, TextProps } from "react-native";
+import { Text as RNText, type TextProps, type TextStyle } from "react-native";
 import { tv } from "tailwind-variants";
 
 // Let's create a temporary typings if needed, or just let users pass tailwind colors as strings.
@@ -11,6 +11,8 @@ type AppTextWeight =
   | "bold"
   | "extrabold"
   | "black";
+
+type AppTextFamily = "body" | "headline" | "mono";
 
 interface AppTextProps extends TextProps {
   size?:
@@ -34,11 +36,14 @@ interface AppTextProps extends TextProps {
     | "surface"
     | "text"
     | "muted"
+    | "success"
+    | "warning"
     | "primary-foreground"
     | "border"
     | null;
   align?: "auto" | "left" | "center" | "right" | "justify";
   weight?: AppTextWeight;
+  family?: AppTextFamily;
 }
 
 const appText = tv({
@@ -66,8 +71,15 @@ const appText = tv({
       surface: "text-surface",
       text: "text-text",
       muted: "text-muted",
+      success: "text-success",
+      warning: "text-warning",
       "primary-foreground": "text-primary-foreground",
       border: "text-border",
+    },
+    family: {
+      body: "font-normal",
+      headline: "font-title",
+      mono: "font-mono",
     },
     align: {
       auto: "",
@@ -91,6 +103,7 @@ const appText = tv({
     size: "base",
     color: "foreground",
     align: "left",
+    family: "body",
   },
 });
 
@@ -103,6 +116,7 @@ export const AppText = ({
   color = "foreground",
   align = "left",
   weight,
+  family = "body",
   style,
   children,
   className,
@@ -113,11 +127,21 @@ export const AppText = ({
     color: color ?? undefined,
     align,
     weight,
+    family,
     className,
   });
 
+  const monoStyle: TextStyle | undefined =
+    family === "mono" ? { fontVariant: ["tabular-nums"] } : undefined;
+
+  const combinedStyle = monoStyle
+    ? style
+      ? [monoStyle, style]
+      : monoStyle
+    : style;
+
   return (
-    <RNText className={combinedClasses} style={style} {...props}>
+    <RNText className={combinedClasses} style={combinedStyle} {...props}>
       {children}
     </RNText>
   );
