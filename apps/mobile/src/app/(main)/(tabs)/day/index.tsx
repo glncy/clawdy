@@ -1,16 +1,12 @@
 import { ScrollView, View } from "react-native";
 import { Stack } from "expo-router";
-import { Card } from "heroui-native";
+import { Card, Checkbox } from "heroui-native";
 import { AppText } from "@/components/atoms/Text";
 import { PriorityList } from "@/components/organisms/PriorityList";
 import { PomodoroTimer } from "@/components/organisms/PomodoroTimer";
-import { CheckSquare, Square } from "phosphor-react-native";
-import { useCSSVariable } from "uniwind";
 import { MOCK_PRIORITIES, MOCK_QUICK_LIST } from "@/data/mockData";
 
 export default function DayScreen() {
-  const [mutedColor] = useCSSVariable(["--color-muted"]);
-
   return (
     <>
       <Stack.Screen options={{ title: "Today" }} />
@@ -39,12 +35,11 @@ export default function DayScreen() {
           </AppText>
           {MOCK_QUICK_LIST.map((item) => (
             <View key={item.id} className="flex-row items-center gap-3 py-1">
-              {item.isCompleted ? (
-                <CheckSquare size={18} weight="fill" color={mutedColor as string} />
-              ) : (
-                <Square size={18} weight="regular" color={mutedColor as string} />
-              )}
-              <AppText size="sm" color={item.isCompleted ? "muted" : "foreground"}>
+              <Checkbox isSelected={item.isCompleted} />
+              <AppText
+                size="sm"
+                color={item.isCompleted ? "muted" : "foreground"}
+              >
                 {item.text}
               </AppText>
             </View>

@@ -1,15 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { View, ScrollView, ActivityIndicator } from "react-native";
 import { Stack } from "expo-router";
 import { Card, Button, TextField, Input, Separator } from "heroui-native";
 import * as Device from "expo-device";
 import { AppText } from "@/components/atoms/Text";
 import { useLocalAI } from "@/hooks/useLocalAI";
-import { MODEL_CONFIG, formatBytes } from "@/services/localAI";
-import {
-  TRANSACTION_SYSTEM_PROMPT,
-  TRANSACTION_SCHEMA,
-} from "@/services/transactionSchema";
+import { formatBytes } from "@/services/localAI";
+import { TRANSACTION_SYSTEM_PROMPT } from "@/services/transactionSchema";
 
 export default function AITestScreen() {
   const {
@@ -20,20 +17,24 @@ export default function AITestScreen() {
     error,
     isModelDownloaded,
     response,
-    tokensPerSecond,
     checkModel,
     downloadModel,
     loadModel,
     complete,
+    completeJSON,
     releaseModel,
+    removeModel,
     clearResponse,
-    isContextLoaded,
+    isModelLoaded,
+    MODEL,
   } = useLocalAI();
 
   const [prompt, setPrompt] = useState("");
   const totalRAM = Device.totalMemory
     ? formatBytes(Device.totalMemory)
     : "Unknown";
+  const progressPercent = Math.round(downloadProgress * 100);
+  const isReady = status === "ready";
 
   useEffect(() => {
     checkModel();
@@ -44,15 +45,16 @@ export default function AITestScreen() {
     await complete(prompt.trim());
   };
 
-  const handleTransactionParse = async () => {
-    const testInput = "coffee 4.50 at starbucks";
-    await complete(testInput, TRANSACTION_SYSTEM_PROMPT, {
-      type: "json_schema",
-      json_schema: { schema: TRANSACTION_SCHEMA },
-    });
+  const handleTransactionPrompt = async () => {
+    await complete("coffee 4.50 at starbucks", TRANSACTION_SYSTEM_PROMPT);
   };
 
-  const progressPercent = Math.round(downloadProgress * 100);
+  const handleTransactionJSON = async () => {
+    await completeJSON(
+      "coffee 4.50 at starbucks",
+      TRANSACTION_SYSTEM_PROMPT
+    );
+  };
 
   return (
     <>
@@ -81,7 +83,7 @@ export default function AITestScreen() {
           </Card.Body>
         </Card>
 
-        {/* Model Info */}
+        {/* Model */}
         <Card className="bg-surface p-4">
           <Card.Body className="gap-3">
             <AppText size="sm" weight="bold" family="headline">
@@ -90,12 +92,12 @@ export default function AITestScreen() {
             <View className="gap-1">
               <View className="flex-row justify-between">
                 <AppText size="xs" color="muted">Name</AppText>
-                <AppText size="xs" family="mono">{MODEL_CONFIG.name}</AppText>
+                <AppText size="xs" family="mono">{MODEL.name}</AppText>
               </View>
               <View className="flex-row justify-between">
                 <AppText size="xs" color="muted">Size</AppText>
                 <AppText size="xs" family="mono">
-                  {formatBytes(MODEL_CONFIG.sizeBytes)}
+                  {formatBytes(MODEL.sizeBytes)}
                 </AppText>
               </View>
               <View className="flex-row justify-between">
@@ -103,14 +105,13 @@ export default function AITestScreen() {
                 <AppText
                   size="xs"
                   weight="semibold"
-                  color={isModelDownloaded ? "primary" : "muted"}
+                  color={isModelLoaded ? "primary" : isModelDownloaded ? "warning" : "muted"}
                 >
-                  {isModelDownloaded ? "Downloaded" : "Not downloaded"}
+                  {isModelLoaded ? "Ready" : isModelDownloaded ? "Downloaded" : "Not downloaded"}
                 </AppText>
               </View>
             </View>
 
-            {/* Download Progress */}
             {status === "downloading" && (
               <View className="gap-2">
                 <View className="h-3 overflow-hidden rounded-full bg-default">
@@ -125,29 +126,32 @@ export default function AITestScreen() {
               </View>
             )}
 
-            {/* Model Loading Progress */}
             {status === "loading" && (
               <View className="items-center gap-2 py-2">
                 <ActivityIndicator />
-                <AppText size="xs" color="muted">Loading model into memory...</AppText>
+                <AppText size="xs" color="muted">Loading into memory...</AppText>
               </View>
             )}
 
-            {/* Actions */}
             <View className="flex-row gap-2">
               {!isModelDownloaded && status !== "downloading" && (
                 <Button variant="primary" onPress={downloadModel} className="flex-1">
                   <Button.Label>Download</Button.Label>
                 </Button>
               )}
-              {isModelDownloaded && !isContextLoaded && status !== "loading" && (
+              {isModelDownloaded && !isModelLoaded && status !== "loading" && status !== "downloading" && (
                 <Button variant="primary" onPress={loadModel} className="flex-1">
                   <Button.Label>Load Model</Button.Label>
                 </Button>
               )}
-              {isContextLoaded && (
+              {isModelLoaded && (
                 <Button variant="tertiary" onPress={releaseModel} className="flex-1">
                   <Button.Label>Unload</Button.Label>
+                </Button>
+              )}
+              {isModelDownloaded && !isModelLoaded && status !== "loading" && status !== "downloading" && (
+                <Button variant="danger" onPress={removeModel} className="flex-1">
+                  <Button.Label>Delete</Button.Label>
                 </Button>
               )}
             </View>
@@ -158,27 +162,14 @@ export default function AITestScreen() {
         <View className="flex-row items-center gap-2">
           <View
             className={`h-2.5 w-2.5 rounded-full ${
-              status === "ready"
-                ? "bg-primary"
-                : status === "error"
-                  ? "bg-danger"
-                  : status === "inferring"
-                    ? "bg-warning"
-                    : "bg-muted"
+              isReady ? "bg-primary" : status === "inferring" ? "bg-warning" : "bg-muted"
             }`}
           />
-          <AppText size="xs" color="muted">
-            Status: {status}
-          </AppText>
-          {tokensPerSecond !== null && (
-            <AppText size="xs" color="primary" family="mono">
-              {tokensPerSecond.toFixed(1)} tok/s
-            </AppText>
-          )}
+          <AppText size="xs" color="muted">Status: {status}</AppText>
         </View>
 
         {error && (
-          <AppText size="xs" color="danger">{error}</AppText>
+          <AppText size="xs" color="danger" selectable>{error}</AppText>
         )}
 
         <Separator />
@@ -200,7 +191,7 @@ export default function AITestScreen() {
           <Button
             variant="primary"
             onPress={handleFreeChat}
-            isDisabled={!isContextLoaded || status === "inferring" || !prompt.trim()}
+            isDisabled={!isReady || status === "inferring" || !prompt.trim()}
           >
             <Button.Label>
               {status === "inferring" ? "Generating..." : "Send"}
@@ -210,21 +201,30 @@ export default function AITestScreen() {
 
         <Separator />
 
-        {/* Transaction Parse Test */}
+        {/* Transaction Parse */}
         <View className="gap-3">
           <AppText size="sm" weight="bold" family="headline">
             Transaction Parse Test
           </AppText>
           <AppText size="xs" color="muted">
-            Sends &quot;coffee 4.50 at starbucks&quot; with JSON schema constraint
+            Input: &quot;coffee 4.50 at starbucks&quot;
           </AppText>
-          <Button
-            variant="secondary"
-            onPress={handleTransactionParse}
-            isDisabled={!isContextLoaded || status === "inferring"}
-          >
-            <Button.Label>Test Transaction Parse</Button.Label>
-          </Button>
+          <View className="gap-2">
+            <Button
+              variant="secondary"
+              onPress={handleTransactionPrompt}
+              isDisabled={!isReady || status === "inferring"}
+            >
+              <Button.Label>Stream (raw response)</Button.Label>
+            </Button>
+            <Button
+              variant="primary"
+              onPress={handleTransactionJSON}
+              isDisabled={!isReady || status === "inferring"}
+            >
+              <Button.Label>Parse JSON (extracted)</Button.Label>
+            </Button>
+          </View>
         </View>
 
         <Separator />

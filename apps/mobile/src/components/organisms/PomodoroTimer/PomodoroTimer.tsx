@@ -6,8 +6,13 @@ import { AppText } from "@/components/atoms/Text";
 import { useTimerStore } from "@/stores/useTimerStore";
 
 export const PomodoroTimer = () => {
-  const { seconds, isRunning, sessionLength, start, pause, reset, tick } =
-    useTimerStore();
+  const seconds = useTimerStore((s) => s.seconds);
+  const isRunning = useTimerStore((s) => s.isRunning);
+  const sessionLength = useTimerStore((s) => s.sessionLength);
+  const start = useTimerStore((s) => s.start);
+  const pause = useTimerStore((s) => s.pause);
+  const reset = useTimerStore((s) => s.reset);
+  const tick = useTimerStore((s) => s.tick);
 
   useEffect(() => {
     if (!isRunning) return;

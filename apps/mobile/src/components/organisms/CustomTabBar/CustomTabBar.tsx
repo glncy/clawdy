@@ -6,6 +6,7 @@ import {
   Leaf,
   Sun,
   UsersThree,
+  DotsThree,
   Plus,
 } from "phosphor-react-native";
 import type { ComponentType } from "react";
@@ -24,93 +25,117 @@ const TAB_CONFIG: Record<
   life: { label: "Life", icon: Leaf },
   day: { label: "Day", icon: Sun },
   people: { label: "People", icon: UsersThree },
+  more: { label: "More", icon: DotsThree },
 };
 
+// Tab order: Home, Money, Life, [+], Day, People, More
+const LEFT_TABS = ["home", "money", "life"];
+const RIGHT_TABS = ["day", "people", "more"];
+
 /**
- * Custom Tab Bar with floating center add button
+ * Custom Tab Bar with center add button between Life and Day
  * @level Organism
  */
-export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function CustomTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const toggleQuickAction = useQuickActionStore((s) => s.toggle);
-  const [primaryColor, mutedColor, , foregroundColor] =
-    useCSSVariable([
-      "--color-primary",
-      "--color-muted",
-      "--color-surface",
-      "--color-foreground",
-    ]);
+  const [primaryColor, mutedColor, foregroundColor] = useCSSVariable([
+    "--color-primary",
+    "--color-muted",
+    "--color-foreground",
+  ]);
+
+  const renderTab = (routeName: string) => {
+    const routeIndex = state.routes.findIndex((r) => r.name === routeName);
+    if (routeIndex === -1) return null;
+
+    const route = state.routes[routeIndex];
+    const config = TAB_CONFIG[routeName];
+    if (!config) return null;
+
+    const { options } = descriptors[route.key];
+    const isFocused = state.index === routeIndex;
+    const Icon = config.icon;
+
+    const onPress = () => {
+      const event = navigation.emit({
+        type: "tabPress",
+        target: route.key,
+        canPreventDefault: true,
+      });
+      if (!isFocused && !event.defaultPrevented) {
+        navigation.navigate(route.name, route.params);
+      }
+    };
+
+    const onLongPress = () => {
+      navigation.emit({
+        type: "tabLongPress",
+        target: route.key,
+      });
+    };
+
+    const iconColor = isFocused
+      ? (primaryColor as string)
+      : (mutedColor as string);
+
+    return (
+      <Pressable
+        key={route.key}
+        accessibilityRole="button"
+        accessibilityState={isFocused ? { selected: true } : {}}
+        accessibilityLabel={options.tabBarAccessibilityLabel}
+        onPress={onPress}
+        onLongPress={onLongPress}
+        className="flex-1 items-center gap-0.5 py-1"
+      >
+        <Icon
+          size={20}
+          weight={isFocused ? "fill" : "regular"}
+          color={iconColor}
+        />
+        <AppText
+          size="xs"
+          color={isFocused ? "primary" : "muted"}
+          align="center"
+          style={{ fontSize: 10 }}
+        >
+          {config.label}
+        </AppText>
+      </Pressable>
+    );
+  };
 
   return (
     <View
       className="absolute bottom-0 left-0 right-0 border-t border-default bg-surface"
       style={{ paddingBottom: insets.bottom }}
     >
-      {/* Floating Add Button */}
-      <Pressable
-        className="absolute -top-7 left-1/2 z-10 h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-primary shadow-lg"
-        onPress={toggleQuickAction}
-      >
-        <Plus size={24} weight="bold" color={foregroundColor as string} />
-      </Pressable>
+      <View className="flex-row items-end px-1 pt-1">
+        {/* Left tabs: Home, Money, Life */}
+        {LEFT_TABS.map(renderTab)}
 
-      {/* Tab Items */}
-      <View className="flex-row items-center justify-around px-2 pt-2">
-        {state.routes.map((route, index) => {
-          const config = TAB_CONFIG[route.name];
-          if (!config) return null;
+        {/* Center + button */}
+        <View className="flex-1 items-center pb-3">
+          <Pressable
+            className="h-12 w-12 items-center justify-center rounded-full bg-primary shadow-md"
+            style={{ marginTop: -24, borderCurve: "continuous" }}
+            onPress={toggleQuickAction}
+          >
+            <Plus
+              size={22}
+              weight="bold"
+              color={foregroundColor as string}
+            />
+          </Pressable>
+        </View>
 
-          const { options } = descriptors[route.key];
-          const isFocused = state.index === index;
-          const Icon = config.icon;
-
-          const onPress = () => {
-            const event = navigation.emit({
-              type: "tabPress",
-              target: route.key,
-              canPreventDefault: true,
-            });
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params);
-            }
-          };
-
-          const onLongPress = () => {
-            navigation.emit({
-              type: "tabLongPress",
-              target: route.key,
-            });
-          };
-
-          const iconColor = isFocused
-            ? (primaryColor as string)
-            : (mutedColor as string);
-
-          return (
-            <Pressable
-              key={route.key}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              onPress={onPress}
-              onLongPress={onLongPress}
-              className="flex-1 items-center gap-1 py-1"
-            >
-              <Icon
-                size={22}
-                weight={isFocused ? "fill" : "regular"}
-                color={iconColor}
-              />
-              <AppText
-                size="xs"
-                color={isFocused ? "primary" : "muted"}
-                align="center"
-              >
-                {config.label}
-              </AppText>
-            </Pressable>
-          );
-        })}
+        {/* Right tabs: Day, People, More */}
+        {RIGHT_TABS.map(renderTab)}
       </View>
     </View>
   );

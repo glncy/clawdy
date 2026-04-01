@@ -1,19 +1,26 @@
-export const TRANSACTION_SCHEMA = {
-  type: "object" as const,
-  properties: {
-    item: { type: "string" as const },
-    amount: { type: "number" as const },
-    currency: { type: "string" as const },
-    category: { type: "string" as const },
-  },
-  required: ["item", "amount"],
-};
+import { z } from "zod";
 
-export const TRANSACTION_SYSTEM_PROMPT = `You are a financial transaction parser. The user will describe an expense in natural language. Extract the following fields and respond with JSON only:
-- item: what was purchased
-- amount: the numeric amount spent
-- currency: the currency code (default USD if not specified)
-- category: one of Food, Transport, Shopping, Bills, Health, Entertainment, Groceries, Other
+export const transactionSchema = z.object({
+  item: z.string().describe("What was purchased"),
+  amount: z.number().describe("The numeric amount spent"),
+  currency: z.string().describe("Currency code, default USD").default("USD"),
+  category: z
+    .enum([
+      "Food",
+      "Transport",
+      "Shopping",
+      "Bills",
+      "Health",
+      "Entertainment",
+      "Groceries",
+      "Other",
+    ])
+    .describe("Spending category"),
+});
+
+export type Transaction = z.infer<typeof transactionSchema>;
+
+export const TRANSACTION_SYSTEM_PROMPT = `You are a financial transaction parser. The user will describe an expense in natural language. Extract the item, amount, currency, and category. Respond with JSON only.
 
 Examples:
 User: "coffee 4.50"

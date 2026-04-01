@@ -42,7 +42,7 @@ export const useAIStore = create<AIState>((set) => ({
   setStatus: (status) => set({ status, error: status === "error" ? undefined : null }),
   setDownloadProgress: (progress, downloaded, total) =>
     set({ downloadProgress: progress, downloadedBytes: downloaded, totalBytes: total }),
-  setError: (error) => set({ error, status: error ? "error" : "idle" }),
+  setError: (error) => set({ error }),
   setModelDownloaded: (downloaded) => set({ isModelDownloaded: downloaded }),
   setResponse: (response) => set({ response }),
   appendResponse: (token) => set((state) => ({ response: state.response + token })),

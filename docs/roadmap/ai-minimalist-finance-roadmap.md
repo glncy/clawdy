@@ -69,7 +69,7 @@
 
 ### Tech Stack
 - React Native (Expo 55) + Drizzle ORM + expo-sqlite
-- llama.rn + Qwen 2.5 0.5B for AI expense parsing
+- @react-native-ai/llama (Vercel AI SDK) + Qwen 2.5 1.5B Instruct for AI expense parsing
 - @jamsch/expo-speech-recognition for voice input
 - Phosphor Icons
 - expo-notifications

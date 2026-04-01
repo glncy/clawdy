@@ -20,6 +20,7 @@ export default function TabLayout() {
           <Tabs.Screen name="life" />
           <Tabs.Screen name="day" />
           <Tabs.Screen name="people" />
+          <Tabs.Screen name="more" />
         </Tabs>
         <QuickActionSheet />
       </View>

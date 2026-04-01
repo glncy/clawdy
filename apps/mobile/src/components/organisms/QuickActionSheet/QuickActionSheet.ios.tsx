@@ -1,5 +1,14 @@
 import { View } from "react-native";
-import { BottomSheet } from "@expo/ui/swift-ui";
+import {
+  BottomSheet,
+  Group,
+  Host,
+  RNHostView,
+} from "@expo/ui/swift-ui";
+import {
+  presentationDetents,
+  presentationDragIndicator,
+} from "@expo/ui/swift-ui/modifiers";
 import { AppText } from "@/components/atoms/Text";
 import {
   CurrencyDollar,
@@ -26,31 +35,45 @@ export const QuickActionSheet = () => {
   const [primaryColor] = useCSSVariable(["--color-primary"]);
 
   return (
-    <BottomSheet
-      isPresented={isOpen}
-      onIsPresentedChange={(presented) => {
-        if (!presented) close();
-      }}
-      fitToContents
-    >
-      <View className="gap-4 px-4 py-6">
-        <AppText size="lg" weight="bold" family="headline">
-          Quick Actions
-        </AppText>
-        <View className="flex-row flex-wrap gap-3">
-          {ACTIONS.map(({ icon: Icon, label }) => (
-            <View
-              key={label}
-              className="w-[47%] items-center gap-2 rounded-xl bg-primary/10 p-4"
-            >
-              <Icon size={28} weight="fill" color={primaryColor as string} />
-              <AppText size="xs" align="center" weight="medium">
-                {label}
+    <Host style={{ position: "absolute", width: 0, height: 0 }}>
+      <BottomSheet
+        isPresented={isOpen}
+        onIsPresentedChange={(presented) => {
+          if (!presented) close();
+        }}
+      >
+        <Group
+          modifiers={[
+            presentationDetents(["medium"]),
+            presentationDragIndicator("visible"),
+          ]}
+        >
+          <RNHostView matchContents>
+            <View className="gap-4 px-4 py-6">
+              <AppText size="lg" weight="bold" family="headline">
+                Quick Actions
               </AppText>
+              <View className="flex-row flex-wrap gap-3">
+                {ACTIONS.map(({ icon: Icon, label }) => (
+                  <View
+                    key={label}
+                    className="w-[47%] items-center gap-2 rounded-xl bg-primary/10 p-4"
+                  >
+                    <Icon
+                      size={28}
+                      weight="fill"
+                      color={primaryColor as string}
+                    />
+                    <AppText size="xs" align="center" weight="medium">
+                      {label}
+                    </AppText>
+                  </View>
+                ))}
+              </View>
             </View>
-          ))}
-        </View>
-      </View>
-    </BottomSheet>
+          </RNHostView>
+        </Group>
+      </BottomSheet>
+    </Host>
   );
 };

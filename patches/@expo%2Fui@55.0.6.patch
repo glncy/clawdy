@@ -1,0 +1,30 @@
+diff --git a/ios/ListView.swift b/ios/ListView.swift
+index a7ca51df0921b2ee87d1c32be6ed409c8a2f0d0d..74b2c246a50085f7f941c0a174406bd2d6996a95 100644
+--- a/ios/ListView.swift
++++ b/ios/ListView.swift
+@@ -19,8 +19,8 @@ struct ListView: ExpoSwiftUI.View {
+     .onAppear {
+       selection = Self.getHashableSetFromEither(props.selection)
+     }
+-    .onChange(of: props.selection) { newValue in
+-      selection = Self.getHashableSetFromEither(newValue)
++    .onChange(of: Self.getHashableSetFromEither(props.selection)) { newValue in
++      selection = newValue
+     }
+     .onChange(of: selection) { newSelection in
+       handleSelectionChange(selection: newSelection)
+diff --git a/ios/Picker/PickerView.swift b/ios/Picker/PickerView.swift
+index 92236438f153f6f05d8fffc8c4057dcf7b968547..ba093072da5d2a5113548abcdbb4c14f9c3a8c05 100644
+--- a/ios/Picker/PickerView.swift
++++ b/ios/Picker/PickerView.swift
+@@ -53,8 +53,8 @@ internal struct PickerView: ExpoSwiftUI.View {
+       }
+       props.onSelectionChange(payload)
+     }
+-    .onChange(of: props.selection) { newValue in
+-      selection = Self.getHashableFromEither(newValue)
++    .onChange(of: Self.getHashableFromEither(props.selection)) { newValue in
++      selection = newValue
+     }
+     .onAppear {
+       selection = Self.getHashableFromEither(props.selection)
