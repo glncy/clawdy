@@ -17,9 +17,9 @@ type Bindings = {
 const EXPO_UP_BASE_PATH = "/api/ota";
 
 const EXPO_UP_PROJECTS = {
-  "fullstack-boilerplate": {
-    owner: "example",
-    repo: "fullstack-boilerplate-ota",
+  clawdi: {
+    owner: "glncy",
+    repo: "clawdi-ota",
   },
 };
 
