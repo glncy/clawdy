@@ -1,4 +1,13 @@
 {
+  "0f52fd973206c735a0e72c47e0e3e505291c8118": {
+    "version": "0.0.1",
+    "buildNumber": "10",
+    "profile": "preview",
+    "previewChannel": "feat/screens-and-improvements",
+    "ref": "feat/screens-and-improvements",
+    "channel": "main",
+    "createdAt": "2026-04-01T12:33:53.390Z"
+  },
   "1769ea412b9284101a301e8087e9c3ac4a4dc3ff": {
     "version": "0.0.1",
     "buildNumber": "7",
