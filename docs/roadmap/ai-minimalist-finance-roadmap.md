@@ -56,7 +56,7 @@
 - Conversation memory
 
 **Day 7 — Polish + Submit**
-- Wire Home dashboard with live data from all tabs
+- Wire Home dashboard with live data from all 4 other tabs
 - Set up all 11 push notifications (max 3/day logic)
 - Center raised "+" add button with context-aware quick actions
 - Dark mode

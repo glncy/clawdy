@@ -145,7 +145,7 @@ quick_list: id, text, completed, createdAt
   - Floating above tab bar center
   - Opens quick-action bottom sheet
   - Context-aware options based on time of day
-- [ ] **Wire Home dashboard with live data from all 4 tabs**
+- [ ] **Wire Home dashboard with live data from all 4 other tabs**
 - [ ] **Set up all 11 push notifications:**
   - Max 3/day logic
   - Quiet hours (10 PM - 7 AM default)
@@ -179,4 +179,4 @@ quick_list: id, text, completed, createdAt
   - Notification scheduling (max 3/day)
   - Export/Delete functionality
   - Trial tracking
-  - All 5 tabs with real data flow to Home
+  - All 4 other tabs with real data flow to Home

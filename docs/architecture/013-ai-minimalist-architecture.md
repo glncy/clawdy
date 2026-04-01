@@ -41,7 +41,7 @@ clawdi Score = weighted aggregate of all 6 pillars (0-100), recalculated weekly.
 ### 3. Local-First Data
 
 - **ORM:** Drizzle ORM with expo-sqlite driver for type-safe schemas and migrations
-- **13 tables:** transactions, recurrences, savings_goals, moods, habits, habit_logs, sleep_logs, priorities, contacts, contact_notes, metadata, stress_logs, water_logs, sparks, quick_list
+- **16 tables:** transactions, recurrences, savings_goals, categories, moods, habits, habit_logs, sleep_logs, priorities, contacts, contact_notes, metadata, stress_logs, water_logs, sparks, quick_list
 - **Sync:** None. Zero cloud sync. Data ownership via Export (CSV/JSON) and Delete Everything.
 
 ### 4. AI-Enhanced Input
