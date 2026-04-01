@@ -17,6 +17,15 @@
     "channel": "main",
     "createdAt": "2026-04-01T08:19:44.382Z"
   },
+  "4d88261e88f4737d74c626dc1e1c622b37c98413": {
+    "version": "0.0.1",
+    "buildNumber": "10",
+    "profile": "preview",
+    "previewChannel": "feat/screens-and-improvements",
+    "ref": "feat/screens-and-improvements",
+    "channel": "main",
+    "createdAt": "2026-04-01T11:40:23.853Z"
+  },
   "5f774357cad0029c5be8c12ec04b4d56c28ca31d": {
     "version": "0.0.1",
     "buildNumber": "8",

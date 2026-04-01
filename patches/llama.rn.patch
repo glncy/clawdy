@@ -1,0 +1,21 @@
+diff --git a/app.plugin.js b/app.plugin.js
+index 1234567..abcdefg 100644
+--- a/app.plugin.js
++++ b/app.plugin.js
+@@ -1 +1,17 @@
+-module.exports = require("./lib/module/expo-plugin/withLlamaRN")
++// Patched: fix @expo/config-plugins interop issue in llama.rn CJS build
++// The CJS build incorrectly uses _interopRequireDefault on @expo/config-plugins,
++// which has no default export. We monkey-patch the require to fix this.
++
++// Pre-load config-plugins with a default export wrapper
++const configPlugins = require('@expo/config-plugins');
++require.cache[require.resolve('@expo/config-plugins')] = {
++  id: require.resolve('@expo/config-plugins'),
++  filename: require.resolve('@expo/config-plugins'),
++  loaded: true,
++  exports: { ...configPlugins, default: configPlugins },
++};
++
++const plugin = require("./lib/commonjs/expo-plugin/withLlamaRN");
++module.exports = plugin.default || plugin;

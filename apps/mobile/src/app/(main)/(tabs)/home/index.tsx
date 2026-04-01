@@ -1,5 +1,6 @@
 import { ScrollView, View } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
+import { Button } from "heroui-native";
 import { AppText } from "@/components/atoms/Text";
 import { ScoreCard } from "@/components/molecules/ScoreCard";
 import { BudgetCard } from "@/components/molecules/BudgetCard";
@@ -58,6 +59,14 @@ export default function HomeScreen() {
             daysAgo={nudgeContact.lastTalkedDaysAgo}
           />
         )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          onPress={() => router.push("/home/ai-test")}
+        >
+          <Button.Label>Test Local AI</Button.Label>
+        </Button>
 
         <VersionTap />
       </ScrollView>

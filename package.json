@@ -1,6 +1,9 @@
 {
   "name": "fullstack-boilerplate-monorepo",
   "private": true,
+  "patchedDependencies": {
+    "llama.rn": "patches/llama.rn.patch"
+  },
   "scripts": {
     "postinstall": "bun run packages/scripts/src/generate-app-config-paths.ts",
     "build": "turbo run build",

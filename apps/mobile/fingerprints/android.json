@@ -1,4 +1,13 @@
 {
+  "4c6939e1645fc2724212645303fc7fa74769f63f": {
+    "version": "0.0.1",
+    "versionCode": 10,
+    "profile": "preview",
+    "previewChannel": "feat/screens-and-improvements",
+    "ref": "feat/screens-and-improvements",
+    "channel": "main",
+    "createdAt": "2026-04-01T11:40:23.853Z"
+  },
   "6bfea5688e2dde81d072a29fd4c5f95b1cd2876c": {
     "version": "0.0.1",
     "versionCode": 9,
