@@ -249,7 +249,7 @@ The more clawdi works, the more indispensable it becomes.
 | Icons | Phosphor Icons (`phosphor-react-native`) |
 | Database | expo-sqlite + Drizzle ORM |
 | State | Zustand |
-| Local LLM | llama.rn + Qwen 2.5 0.5B (Q4_K_M, ~491MB) |
+| Local LLM | @react-native-ai/llama + Qwen 2.5 1.5B Instruct (Q4_K_M, ~900MB) |
 | Voice STT | @jamsch/expo-speech-recognition |
 | Notifications | expo-notifications |
 | Device Info | expo-device (RAM check for LLM capability) |
@@ -267,4 +267,4 @@ The more clawdi works, the more indispensable it becomes.
 - App must be usable without any onboarding tutorial.
 - Export must produce valid CSV/JSON with all user data.
 - Voice input must work offline using native device STT.
-- Local LLM must gracefully fall back to structured input on devices with <4GB RAM.
+- Local LLM must gracefully fall back to structured input on devices with <6GB RAM.

@@ -5,7 +5,7 @@
 | Component     | Package                           | Purpose                                    |
 | ------------- | --------------------------------- | ------------------------------------------ |
 | Database      | `expo-sqlite` + `drizzle-orm`     | Local-first storage with type-safe schemas |
-| Local LLM     | `llama.rn` + Qwen 2.5 0.5B Q4_K_M | On-device expense parsing                 |
+| Local LLM     | `llama.rn` + Qwen 2.5 1.5B Instruct Q4_K_M | On-device expense parsing                 |
 | Voice STT     | `@jamsch/expo-speech-recognition` | Offline speech-to-text                     |
 | Icons         | `phosphor-react-native`           | Replace lucide-react-native                |
 | Notifications | `expo-notifications`              | Local reminders (max 3/day)                |

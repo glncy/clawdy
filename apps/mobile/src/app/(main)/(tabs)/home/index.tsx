@@ -1,35 +1,75 @@
-import { View } from "react-native";
-import { Stack } from "expo-router";
-
-import { MeshGradientBackground } from "@/components/atoms/MeshGradient";
+import { ScrollView, View } from "react-native";
+import { Stack, router } from "expo-router";
+import { Button } from "heroui-native";
 import { AppText } from "@/components/atoms/Text";
+import { ScoreCard } from "@/components/molecules/ScoreCard";
+import { BudgetCard } from "@/components/molecules/BudgetCard";
+import { SparkCard } from "@/components/molecules/SparkCard";
+import { NudgeCard } from "@/components/molecules/NudgeCard";
+import { HabitList } from "@/components/organisms/HabitList";
+import { VersionTap } from "@/components/molecules/VersionTap";
+import {
+  MOCK_CLAWDI_SCORE,
+  MOCK_DOMAIN_SCORES,
+  MOCK_BUDGET_LEFT,
+  MOCK_DAILY_BUDGET,
+  MOCK_HABITS,
+  MOCK_SPARK,
+  MOCK_CONTACTS,
+} from "@/data/mockData";
 
 export default function HomeScreen() {
+  const nudgeContact = MOCK_CONTACTS.find((c) => c.lastTalkedDaysAgo >= 4);
+
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: "Home",
-        }}
-      />
-      <View className="flex-1 items-center justify-center bg-background px-6">
-        <MeshGradientBackground
-          colors={{
-            primary: "#2563eb",
-            secondary: "#14b8a6",
-            accent: "#60a5fa",
-          }}
-        />
-        <View className="z-10 max-w-sm gap-4 rounded-3xl bg-surface/85 p-6">
-          <AppText size="3xl" weight="bold">
-            clawdi
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView
+        className="flex-1 bg-background"
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerClassName="px-5 pt-16 pb-32 gap-5"
+      >
+        <View className="gap-1 pt-2">
+          <AppText size="2xl" weight="bold" family="headline">
+            Good morning, Glency
           </AppText>
-          <AppText color="muted">
-            Start building Clawdi from a clean Expo Router shell while we wire
-            up the rest of the product experience.
+          <AppText size="sm" color="muted">
+            Ready for a peaceful day ahead?
           </AppText>
         </View>
-      </View>
+
+        <ScoreCard score={MOCK_CLAWDI_SCORE} domains={MOCK_DOMAIN_SCORES} />
+
+        <BudgetCard
+          amountLeft={MOCK_BUDGET_LEFT}
+          dailyBudget={MOCK_DAILY_BUDGET}
+        />
+
+        <HabitList habits={MOCK_HABITS} compact />
+
+        <SparkCard
+          text={MOCK_SPARK.text}
+          domain={MOCK_SPARK.domain}
+          isCompleted={MOCK_SPARK.isCompleted}
+        />
+
+        {nudgeContact && (
+          <NudgeCard
+            name={nudgeContact.name}
+            daysAgo={nudgeContact.lastTalkedDaysAgo}
+          />
+        )}
+
+        <Button
+          variant="outline"
+          size="sm"
+          onPress={() => router.push("/home/ai-test")}
+        >
+          <Button.Label>Test Local AI</Button.Label>
+        </Button>
+
+        <VersionTap />
+      </ScrollView>
     </>
   );
 }

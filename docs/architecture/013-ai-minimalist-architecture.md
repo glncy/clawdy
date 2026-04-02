@@ -46,10 +46,10 @@ clawdi Score = weighted aggregate of all 6 pillars (0-100), recalculated weekly.
 
 ### 4. AI-Enhanced Input
 
-- **Local LLM:** `llama.rn` + Qwen 2.5 0.5B Instruct (Q4_K_M, ~491MB) for expense parsing
+- **Local LLM:** `llama.rn` + Qwen 2.5 1.5B Instruct (Q4_K_M, ~900MB) for expense parsing
 - **Grammar-Constrained Decoding:** JSON schema enforced at decoding level
 - **Voice:** `@jamsch/expo-speech-recognition` using native platform STT, offline
-- **Fallback:** Structured manual input on devices with <4GB RAM
+- **Fallback:** Structured manual input on devices with <6GB RAM
 - **Future (Phase 5):** Cross-data correlation engine ("The Why") — basic if-statement logic, not ML
 
 ### 5. Cross-Domain Insights ("The Why")
@@ -103,7 +103,7 @@ Pre-filled from onboarding: budget set, one habit added, savings goal drafted, S
 |-----------|-----------|-----|
 | Framework | React Native (Expo 55) | Cross-platform, single codebase |
 | Database | expo-sqlite + Drizzle ORM | Type-safe local-first storage |
-| Local LLM | llama.rn + Qwen 2.5 0.5B | On-device expense parsing |
+| Local LLM | @react-native-ai/llama + Qwen 2.5 1.5B Instruct | On-device expense parsing |
 | Voice | @jamsch/expo-speech-recognition | Native offline STT |
 | Icons | phosphor-react-native | Clean minimalist design |
 | Notifications | expo-notifications | Local reminders (max 3/day) |

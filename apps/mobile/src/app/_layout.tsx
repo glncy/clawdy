@@ -1,21 +1,25 @@
+import "../polyfills";
 import "../global.css";
 import { Stack } from "expo-router";
 import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RootProviders } from "../providers/RootProviders";
 import { StatusBar } from "expo-status-bar";
-import { useFonts, Syne_800ExtraBold } from "@expo-google-fonts/syne";
 import {
-  Poppins_100Thin,
-  Poppins_200ExtraLight,
-  Poppins_300Light,
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-  Poppins_800ExtraBold,
-  Poppins_900Black,
-} from "@expo-google-fonts/poppins";
+  Literata_400Regular,
+  Literata_700Bold,
+} from "@expo-google-fonts/literata";
+import {
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_600SemiBold,
+  DMSans_700Bold,
+} from "@expo-google-fonts/dm-sans";
+import {
+  RobotoMono_400Regular,
+  RobotoMono_700Bold,
+} from "@expo-google-fonts/roboto-mono";
+import { useFonts } from "expo-font";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import {
@@ -23,7 +27,6 @@ import {
   useActiveColorScheme,
 } from "../providers/ActiveColorSchemeProvider";
 import React from "react";
-import { useSystemTheme } from "@/hooks/useCustomTheme";
 
 function AppNavigationProvider({ children }: { children: React.ReactNode }) {
   const { activeColorScheme } = useActiveColorScheme();
@@ -63,16 +66,14 @@ function AppNavigationProvider({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Syne_800ExtraBold,
-    Poppins_100Thin,
-    Poppins_200ExtraLight,
-    Poppins_300Light,
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    Poppins_800ExtraBold,
-    Poppins_900Black,
+    Literata_400Regular,
+    Literata_700Bold,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+    RobotoMono_400Regular,
+    RobotoMono_700Bold,
   });
 
   if (!loaded && !error) {
