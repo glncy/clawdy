@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { View } from "react-native";
+import { View, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Text } from "@/components/atoms/Text";
-import { Button } from "heroui-native";
-import { Slider } from "@react-native-community/slider";
-import { useActiveColorScheme } from "@/providers/ActiveColorSchemeProvider";
+import { Button, Slider as HeroSlider } from "heroui-native";
+// eslint-disable-next-line import/no-unresolved
+import { Slider as ExpoSlider } from "@expo/ui";
 
 const SLIDES = [
   {
@@ -41,8 +41,6 @@ const SLIDES = [
 
 export default function OnboardingStepSliders() {
   const router = useRouter();
-  const { activeColorScheme } = useActiveColorScheme();
-  const isDark = activeColorScheme === "dark";
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   // Store values between 0 and 100
@@ -82,20 +80,25 @@ export default function OnboardingStepSliders() {
         </Text>
 
         <View className="px-4">
-          <Slider
-            style={{ width: "100%", height: 40 }}
-            minimumValue={0}
-            maximumValue={100}
-            value={values[currentSlideIndex]}
-            onValueChange={(val) => {
-              const newValues = [...values];
-              newValues[currentSlideIndex] = val;
-              setValues(newValues);
-            }}
-            minimumTrackTintColor={isDark ? "#ffffff" : "#000000"}
-            maximumTrackTintColor={isDark ? "#333333" : "#e5e5e5"}
-            thumbTintColor={isDark ? "#ffffff" : "#000000"}
-          />
+          {Platform.OS === "ios" ? (
+            <ExpoSlider
+              value={values[currentSlideIndex]}
+              onValueChange={(val) => {
+                const newValues = [...values];
+                newValues[currentSlideIndex] = val;
+                setValues(newValues);
+              }}
+            />
+          ) : (
+            <HeroSlider
+              value={values[currentSlideIndex]}
+              onChange={(val) => {
+                const newValues = [...values];
+                newValues[currentSlideIndex] = Array.isArray(val) ? val[0] : val;
+                setValues(newValues);
+              }}
+            />
+          )}
           <View className="flex-row justify-between mt-4">
             <Text variant="caption" className="text-foreground-500 font-medium">
               {currentSlide.minLabel}
