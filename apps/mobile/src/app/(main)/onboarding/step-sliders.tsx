@@ -1,10 +1,8 @@
 import React, { useState } from "react";
-import { View, Platform } from "react-native";
+import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { Text } from "@/components/atoms/Text";
-import { Button, Slider as HeroSlider } from "heroui-native";
-// eslint-disable-next-line import/no-unresolved
-import { Slider as ExpoSlider } from "@expo/ui";
+import { Button, Slider } from "heroui-native";
 
 const SLIDES = [
   {
@@ -80,25 +78,14 @@ export default function OnboardingStepSliders() {
         </Text>
 
         <View className="px-4">
-          {Platform.OS === "ios" ? (
-            <ExpoSlider
-              value={values[currentSlideIndex]}
-              onValueChange={(val) => {
-                const newValues = [...values];
-                newValues[currentSlideIndex] = val;
-                setValues(newValues);
-              }}
-            />
-          ) : (
-            <HeroSlider
-              value={values[currentSlideIndex]}
-              onChange={(val) => {
-                const newValues = [...values];
-                newValues[currentSlideIndex] = Array.isArray(val) ? val[0] : val;
-                setValues(newValues);
-              }}
-            />
-          )}
+          <Slider
+            value={values[currentSlideIndex]}
+            onChange={(val) => {
+              const newValues = [...values];
+              newValues[currentSlideIndex] = Array.isArray(val) ? val[0] : val;
+              setValues(newValues);
+            }}
+          />
           <View className="flex-row justify-between mt-4">
             <Text variant="caption" className="text-foreground-500 font-medium">
               {currentSlide.minLabel}
