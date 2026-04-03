@@ -21,7 +21,7 @@ export default function QuestionStruggle() {
       question="What is your biggest daily struggle?"
       value={struggle}
       onValueChange={setStruggle}
-      nextRoute="/(main)/onboarding/step-score"
+      nextRoute="/(main)/onboarding/step-focus"
       isLast
       options={STRUGGLES}
     />

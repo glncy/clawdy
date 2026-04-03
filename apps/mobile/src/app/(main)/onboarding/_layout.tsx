@@ -18,6 +18,8 @@ interface OnboardingData {
   setSavingGoal: (v: string) => void;
   struggle: string;
   setStruggle: (v: string) => void;
+  name: string;
+  setName: (v: string) => void;
 }
 
 const OnboardingContext = createContext<OnboardingData | null>(null);
@@ -39,6 +41,7 @@ function OnboardingProvider({ children }: { children: ReactNode }) {
   const [income, setIncome] = useState("");
   const [savingGoal, setSavingGoal] = useState("");
   const [struggle, setStruggle] = useState("");
+  const [name, setName] = useState("");
 
   return (
     <OnboardingContext.Provider
@@ -51,6 +54,8 @@ function OnboardingProvider({ children }: { children: ReactNode }) {
         setSavingGoal,
         struggle,
         setStruggle,
+        name,
+        setName,
       }}
     >
       {children}
@@ -79,7 +84,8 @@ export default function OnboardingLayout() {
         <Stack.Screen name="step-question/income" />
         <Stack.Screen name="step-question/saving-goal" />
         <Stack.Screen name="step-question/struggle" />
-        <Stack.Screen name="step-score" />
+        <Stack.Screen name="step-focus" />
+        <Stack.Screen name="step-name" />
       </Stack>
     </OnboardingProvider>
   );
