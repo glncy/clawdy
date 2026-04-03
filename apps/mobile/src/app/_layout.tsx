@@ -1,7 +1,7 @@
 import "../polyfills";
 import "../global.css";
 import { Stack } from "expo-router";
-import { HeroUINativeProvider, PortalHost, useThemeColor } from "heroui-native";
+import { HeroUINativeProvider, useThemeColor } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RootProviders } from "../providers/RootProviders";
 import { StatusBar } from "expo-status-bar";
@@ -27,6 +27,7 @@ import {
   useActiveColorScheme,
 } from "../providers/ActiveColorSchemeProvider";
 import React from "react";
+import { AIModelDownloadProvider } from "../providers/AIModelDownloadProvider";
 
 function AppNavigationProvider({ children }: { children: React.ReactNode }) {
   const { activeColorScheme } = useActiveColorScheme();
@@ -88,11 +89,11 @@ export default function RootLayout() {
         (props) => <HeroUINativeProvider {...props} />,
         (props) => <KeyboardProvider {...props} />,
         (props) => <AppNavigationProvider {...props} />,
+        (props) => <AIModelDownloadProvider {...props} />,
       ]}
     >
       <StatusBar style="auto" />
       <Stack />
-      <PortalHost />
     </RootProviders>
   );
 }

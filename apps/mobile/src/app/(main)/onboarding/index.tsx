@@ -1,9 +1,12 @@
 import React, { useEffect } from "react";
-import { View } from "react-native";
+import { Image, View } from "react-native";
 import { useRouter } from "expo-router";
 import { AppText } from "@/components/atoms/Text";
+import { PhosphorIcon } from "@/components/atoms/PhosphorIcon";
+import { CurrencyDollar, Clock, Heartbeat, UsersThree, Brain, ShieldCheck } from "phosphor-react-native";
 import { Button } from "heroui-native";
-import { useOnboarding, DOWNLOAD_BAR_PADDING } from "./_layout";
+import { AIDownloadStatus } from "@/components/molecules/AIDownloadStatus";
+import { useCSSVariable } from "uniwind";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,12 +16,15 @@ import Animated, {
 } from "react-native-reanimated";
 
 const DOMAINS = [
-  { emoji: "💰", label: "Money" },
-  { emoji: "⏰", label: "Time" },
-  { emoji: "💪", label: "Health" },
-  { emoji: "👥", label: "People" },
-  { emoji: "🧠", label: "Mind" },
+  { icon: CurrencyDollar, label: "Money" },
+  { icon: Clock, label: "Time" },
+  { icon: Heartbeat, label: "Health" },
+  { icon: UsersThree, label: "People" },
+  { icon: Brain, label: "Mind" },
 ];
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const splashIcon = require("@/assets/images/splash-icon.png");
 
 function useFadeInUp(delay: number) {
   const opacity = useSharedValue(0);
@@ -43,21 +49,37 @@ function useFadeInUp(delay: number) {
 
 export default function OnboardingIndex() {
   const router = useRouter();
-  const { isDownloadBarVisible } = useOnboarding();
+  const [primaryColor] = useCSSVariable(["--color-primary"]);
 
   const style0 = useFadeInUp(0);
   const style1 = useFadeInUp(200);
   const style2 = useFadeInUp(400);
   const style3 = useFadeInUp(600);
+  const style4 = useFadeInUp(800);
 
   return (
-    <View
-      className="flex-1 bg-background px-6 justify-between"
-      style={isDownloadBarVisible ? { paddingBottom: DOWNLOAD_BAR_PADDING } : undefined}
-    >
+    <View className="flex-1 bg-background px-6 justify-between">
       <View className="flex-1 justify-center items-center">
+        {/* Brand */}
+        <Animated.View style={style0} className="items-center mb-8">
+          <Image
+            source={splashIcon}
+            style={{ width: 48, height: 48, tintColor: "#6EE7B7" }}
+            resizeMode="contain"
+          />
+          <AppText
+            size="sm"
+            weight="bold"
+            family="headline"
+            color="primary"
+            className="mt-2"
+          >
+            clawdi
+          </AppText>
+        </Animated.View>
+
         {/* Headline */}
-        <Animated.View style={style0} className="items-center mb-6">
+        <Animated.View style={style1} className="items-center mb-4">
           <AppText
             size="3xl"
             weight="bold"
@@ -69,39 +91,48 @@ export default function OnboardingIndex() {
         </Animated.View>
 
         {/* Subtext */}
-        <Animated.View style={style1} className="items-center mb-10">
-          <AppText align="center" color="muted" size="lg">
+        <Animated.View style={style2} className="items-center mb-10">
+          <AppText align="center" color="muted">
             Finance is your foundation. Life is your goal.{"\n"}
             We need to know where you stand today.
           </AppText>
         </Animated.View>
 
         {/* Domain preview chips */}
-        <Animated.View style={style2} className="flex-row gap-3 flex-wrap justify-center">
+        <Animated.View style={style3} className="flex-row gap-3 flex-wrap justify-center">
           {DOMAINS.map((d) => (
             <View
               key={d.label}
               className="flex-row items-center gap-1.5 bg-surface rounded-full px-4 py-2"
             >
-              <AppText size="sm">{d.emoji}</AppText>
+              <PhosphorIcon icon={d.icon} size={16} color={primaryColor as string} />
               <AppText size="xs" weight="medium" color="muted">
                 {d.label}
               </AppText>
             </View>
           ))}
         </Animated.View>
+
+        {/* Privacy notice */}
+        <Animated.View style={style3} className="flex-row items-center gap-2 mt-8">
+          <PhosphorIcon icon={ShieldCheck} weight="duotone" size={16} color={primaryColor as string} />
+          <AppText size="xs" color="muted">
+            All your data stays on this device. Nothing is sent online.
+          </AppText>
+        </Animated.View>
       </View>
 
       {/* Bottom section */}
-      <Animated.View style={style3} className="items-center w-full pb-10">
+      <Animated.View style={style4} className="w-full pb-12 gap-3">
         <Button
           variant="primary"
           size="lg"
           className="w-full rounded-2xl"
-          onPress={() => router.push("/(main)/onboarding/step-sliders")}
+          onPress={() => router.push("/(main)/onboarding/step-slider/money")}
         >
-          <Button.Label>Start the Mirror</Button.Label>
+          <Button.Label>Start</Button.Label>
         </Button>
+        <AIDownloadStatus />
       </Animated.View>
     </View>
   );

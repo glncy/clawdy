@@ -6,12 +6,14 @@ import { Button } from "heroui-native";
 import { PhosphorIcon } from "@/components/atoms/PhosphorIcon";
 import { Warning } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
-import { useOnboarding, DOWNLOAD_BAR_PADDING } from "./_layout";
+import { AIDownloadStatus } from "@/components/molecules/AIDownloadStatus";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withDelay,
   withTiming,
+  withRepeat,
+  withSequence,
   Easing,
 } from "react-native-reanimated";
 
@@ -36,25 +38,74 @@ function useFadeIn(delay: number) {
   }));
 }
 
+function useFadeInScale(delay: number) {
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.8);
+
+  useEffect(() => {
+    opacity.value = withDelay(
+      delay,
+      withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) })
+    );
+    scale.value = withDelay(
+      delay,
+      withTiming(1, { duration: 800, easing: Easing.out(Easing.back(2)) })
+    );
+  }, [delay, opacity, scale]);
+
+  return useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
+}
+
 export default function OnboardingStepResult() {
   const router = useRouter();
-  const { isDownloadBarVisible } = useOnboarding();
   const [dangerColor] = useCSSVariable(["--color-danger"]);
 
-  const iconStyle = useFadeIn(300);
+  // Pulsing icon
+  const iconOpacity = useSharedValue(0);
+  const iconScale = useSharedValue(0.8);
+  const pulseScale = useSharedValue(1);
+
+  useEffect(() => {
+    iconOpacity.value = withDelay(
+      300,
+      withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) })
+    );
+    iconScale.value = withDelay(
+      300,
+      withTiming(1, { duration: 600, easing: Easing.out(Easing.back(2)) })
+    );
+    // Start pulsing after initial animation
+    pulseScale.value = withDelay(
+      1000,
+      withRepeat(
+        withSequence(
+          withTiming(1.08, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        true
+      )
+    );
+  }, [iconOpacity, iconScale, pulseScale]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    opacity: iconOpacity.value,
+    transform: [{ scale: iconScale.value * pulseScale.value }],
+  }));
+
   const line1Style = useFadeIn(700);
   const line2Style = useFadeIn(1000);
   const subtextStyle = useFadeIn(1400);
-  const untilStyle = useFadeIn(1900);
+  const untilStyle = useFadeInScale(1900);
   const buttonStyle = useFadeIn(2400);
 
   return (
-    <View
-      className="flex-1 bg-background px-6 py-12 justify-between"
-      style={isDownloadBarVisible ? { paddingBottom: DOWNLOAD_BAR_PADDING } : undefined}
-    >
+    <View className="flex-1 bg-background px-6 justify-between">
       <View className="flex-1 justify-center items-center">
-        {/* Warning icon */}
+        {/* Warning icon — pulsing */}
         <Animated.View
           style={iconStyle}
           className="w-24 h-24 rounded-full bg-danger/10 items-center justify-center mb-10"
@@ -80,12 +131,13 @@ export default function OnboardingStepResult() {
           </AppText>
         </Animated.View>
 
-        <Animated.View style={subtextStyle} className="mb-10">
-          <AppText size="lg" align="center" color="muted">
+        <Animated.View style={subtextStyle} className="mb-10 px-4">
+          <AppText align="center" color="muted">
             Your finances feel scattered, time is slipping away, and your energy is low.
           </AppText>
         </Animated.View>
 
+        {/* "Until now" — scale up with bounce */}
         <Animated.View style={untilStyle}>
           <AppText size="2xl" weight="bold" family="headline" align="center" color="primary">
             Until now.
@@ -93,15 +145,16 @@ export default function OnboardingStepResult() {
         </Animated.View>
       </View>
 
-      <Animated.View style={buttonStyle} className="items-center w-full pb-8">
+      <Animated.View style={buttonStyle} className="w-full pb-12 gap-3">
         <Button
           variant="primary"
           size="lg"
           className="w-full rounded-2xl"
-          onPress={() => router.push("/(main)/onboarding/step-questions")}
+          onPress={() => router.push("/(main)/onboarding/step-question/income")}
         >
           <Button.Label>Change Everything</Button.Label>
         </Button>
+        <AIDownloadStatus />
       </Animated.View>
     </View>
   );
