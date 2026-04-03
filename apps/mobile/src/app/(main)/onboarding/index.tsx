@@ -1,12 +1,13 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { AppText } from "@/components/atoms/Text";
-import { Button, Toast, useToast } from "heroui-native";
-import { useLocalAI } from "@/hooks/useLocalAI";
+import { Button } from "heroui-native";
 import { PhosphorIcon } from "@/components/atoms/PhosphorIcon";
 import { Brain, CheckCircle } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
+import { useLocalAI } from "@/hooks/useLocalAI";
+import { useOnboarding, DOWNLOAD_BAR_PADDING } from "./_layout";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -22,8 +23,6 @@ const DOMAINS = [
   { emoji: "👥", label: "People" },
   { emoji: "🧠", label: "Mind" },
 ];
-
-const DOWNLOAD_TOAST_ID = "ai-download";
 
 function useFadeInUp(delay: number) {
   const opacity = useSharedValue(0);
@@ -46,113 +45,11 @@ function useFadeInUp(delay: number) {
   }));
 }
 
-function DownloadToast({
-  progress,
-  id,
-  index,
-  total,
-  heights,
-  show,
-  hide,
-  maxVisibleToasts,
-}: {
-  progress: number;
-} & React.ComponentProps<typeof Toast>) {
-  const percentage = Math.round(progress * 100);
-
-  return (
-    <Toast
-      id={id}
-      index={index}
-      total={total}
-      heights={heights}
-      show={show}
-      hide={hide}
-      maxVisibleToasts={maxVisibleToasts}
-      placement="bottom"
-      isSwipeable={false}
-    >
-      <Toast.Title>Setting up on-device AI</Toast.Title>
-      <Toast.Description>
-        {percentage > 0
-          ? `Downloading model... ${percentage}%`
-          : "Preparing download..."}
-      </Toast.Description>
-    </Toast>
-  );
-}
-
-function DoneToast(
-  props: React.ComponentProps<typeof Toast>
-) {
-  return (
-    <Toast
-      {...props}
-      placement="bottom"
-      variant="success"
-    >
-      <Toast.Title>On-device AI ready</Toast.Title>
-      <Toast.Description>No cloud, full privacy.</Toast.Description>
-    </Toast>
-  );
-}
-
 export default function OnboardingIndex() {
   const router = useRouter();
-  const { downloadModel, downloadProgress, isModelDownloaded } = useLocalAI();
-  const { toast } = useToast();
-  const downloadToastShownRef = useRef(false);
-  const doneToastShownRef = useRef(false);
+  const { isDownloadBarVisible } = useOnboarding();
+  const { isModelDownloaded } = useLocalAI();
   const [primaryColor] = useCSSVariable(["--color-primary"]);
-
-  // Start download
-  useEffect(() => {
-    if (!isModelDownloaded) {
-      downloadModel();
-    }
-  }, [isModelDownloaded, downloadModel]);
-
-  // Show/update download toast
-  useEffect(() => {
-    if (isModelDownloaded) {
-      // Hide download toast and show done toast
-      if (downloadToastShownRef.current) {
-        toast.hide(DOWNLOAD_TOAST_ID);
-        downloadToastShownRef.current = false;
-      }
-      if (!doneToastShownRef.current) {
-        doneToastShownRef.current = true;
-        toast.show({
-          id: "ai-done",
-          duration: 3000,
-          component: (props) => <DoneToast {...props} />,
-        });
-      }
-      return;
-    }
-
-    // Show persistent download toast
-    if (!downloadToastShownRef.current) {
-      downloadToastShownRef.current = true;
-      toast.show({
-        id: DOWNLOAD_TOAST_ID,
-        duration: "persistent",
-        component: (props) => (
-          <DownloadToast {...props} progress={downloadProgress} />
-        ),
-      });
-    } else {
-      // Update: hide and re-show with new progress
-      toast.hide(DOWNLOAD_TOAST_ID);
-      toast.show({
-        id: DOWNLOAD_TOAST_ID,
-        duration: "persistent",
-        component: (props) => (
-          <DownloadToast {...props} progress={downloadProgress} />
-        ),
-      });
-    }
-  }, [isModelDownloaded, downloadProgress, toast]);
 
   const style0 = useFadeInUp(0);
   const style1 = useFadeInUp(200);
@@ -160,7 +57,10 @@ export default function OnboardingIndex() {
   const style3 = useFadeInUp(600);
 
   return (
-    <View className="flex-1 bg-background px-6 justify-between">
+    <View
+      className="flex-1 bg-background px-6 justify-between"
+      style={isDownloadBarVisible ? { paddingBottom: DOWNLOAD_BAR_PADDING } : undefined}
+    >
       <View className="flex-1 justify-center items-center">
         {/* Icon */}
         <Animated.View style={style0} className="mb-8">

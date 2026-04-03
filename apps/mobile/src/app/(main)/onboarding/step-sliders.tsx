@@ -3,7 +3,7 @@ import { View, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { AppText } from "@/components/atoms/Text";
 import { Button, Card, Slider as HeroSlider } from "heroui-native";
-import { useOnboarding } from "./_layout";
+import { useOnboarding, DOWNLOAD_BAR_PADDING } from "./_layout";
 import { Host, Slider as ExpoSlider } from "@expo/ui/swift-ui";
 
 const SLIDES = [
@@ -35,7 +35,7 @@ function StepDots({ current, total }: { current: number; total: number }) {
 
 export default function OnboardingStepSliders() {
   const router = useRouter();
-  const { sliderValues, setSliderValues } = useOnboarding();
+  const { sliderValues, setSliderValues, isDownloadBarVisible } = useOnboarding();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   const currentSlide = SLIDES[currentSlideIndex];
@@ -64,7 +64,10 @@ export default function OnboardingStepSliders() {
   };
 
   return (
-    <View className="flex-1 bg-background px-6 pt-16 pb-12">
+    <View
+      className="flex-1 bg-background px-6 pt-16 pb-12"
+      style={isDownloadBarVisible ? { paddingBottom: DOWNLOAD_BAR_PADDING } : undefined}
+    >
       {/* Step dots */}
       <StepDots current={currentSlideIndex} total={SLIDES.length} />
 

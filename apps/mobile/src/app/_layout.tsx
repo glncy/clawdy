@@ -1,7 +1,7 @@
 import "../polyfills";
 import "../global.css";
 import { Stack } from "expo-router";
-import { HeroUINativeProvider, useThemeColor } from "heroui-native";
+import { HeroUINativeProvider, PortalHost, useThemeColor } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RootProviders } from "../providers/RootProviders";
 import { StatusBar } from "expo-status-bar";
@@ -92,6 +92,7 @@ export default function RootLayout() {
     >
       <StatusBar style="auto" />
       <Stack />
+      <PortalHost />
     </RootProviders>
   );
 }

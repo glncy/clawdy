@@ -5,7 +5,7 @@ import { AppText } from "@/components/atoms/Text";
 import { Button, Card } from "heroui-native";
 import { ProgressRing } from "@/components/atoms/ProgressRing";
 import { DomainBar } from "@/components/atoms/DomainBar";
-import { useOnboarding } from "./_layout";
+import { useOnboarding, DOWNLOAD_BAR_PADDING } from "./_layout";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -46,7 +46,7 @@ function useFadeIn(delay: number) {
 
 export default function OnboardingStepScore() {
   const router = useRouter();
-  const { sliderValues } = useOnboarding();
+  const { sliderValues, isDownloadBarVisible } = useOnboarding();
 
   // Compute average score from slider values (0-100)
   const averageScore = Math.round(
@@ -92,7 +92,10 @@ export default function OnboardingStepScore() {
   const buttonStyle = useFadeIn(2200);
 
   return (
-    <View className="flex-1 bg-background px-6 py-12 justify-between">
+    <View
+      className="flex-1 bg-background px-6 py-12 justify-between"
+      style={isDownloadBarVisible ? { paddingBottom: DOWNLOAD_BAR_PADDING } : undefined}
+    >
       <View className="flex-1 justify-center items-center gap-8">
         {/* Score ring */}
         <Animated.View style={ringStyle} className="items-center">

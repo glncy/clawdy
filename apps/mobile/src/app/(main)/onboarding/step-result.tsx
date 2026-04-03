@@ -6,6 +6,7 @@ import { Button } from "heroui-native";
 import { PhosphorIcon } from "@/components/atoms/PhosphorIcon";
 import { Warning } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
+import { useOnboarding, DOWNLOAD_BAR_PADDING } from "./_layout";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -37,6 +38,7 @@ function useFadeIn(delay: number) {
 
 export default function OnboardingStepResult() {
   const router = useRouter();
+  const { isDownloadBarVisible } = useOnboarding();
   const [dangerColor] = useCSSVariable(["--color-danger"]);
 
   const iconStyle = useFadeIn(300);
@@ -47,7 +49,10 @@ export default function OnboardingStepResult() {
   const buttonStyle = useFadeIn(2400);
 
   return (
-    <View className="flex-1 bg-background px-6 py-12 justify-between">
+    <View
+      className="flex-1 bg-background px-6 py-12 justify-between"
+      style={isDownloadBarVisible ? { paddingBottom: DOWNLOAD_BAR_PADDING } : undefined}
+    >
       <View className="flex-1 justify-center items-center">
         {/* Warning icon */}
         <Animated.View

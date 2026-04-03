@@ -6,7 +6,7 @@ import { Button, Card, Input } from "heroui-native";
 import { PhosphorIcon } from "@/components/atoms/PhosphorIcon";
 import { CheckCircle } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
-import { useOnboarding } from "./_layout";
+import { useOnboarding, DOWNLOAD_BAR_PADDING } from "./_layout";
 
 const SAVING_GOALS = [
   { label: "Emergency Fund", emoji: "🏦" },
@@ -88,7 +88,7 @@ function SelectionCard({
 
 export default function OnboardingStepQuestions() {
   const router = useRouter();
-  const { income, setIncome, savingGoal, setSavingGoal, struggle, setStruggle } =
+  const { income, setIncome, savingGoal, setSavingGoal, struggle, setStruggle, isDownloadBarVisible } =
     useOnboarding();
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -120,7 +120,10 @@ export default function OnboardingStepQuestions() {
   };
 
   return (
-    <View className="flex-1 bg-background px-6 pt-16 pb-12">
+    <View
+      className="flex-1 bg-background px-6 pt-16 pb-12"
+      style={isDownloadBarVisible ? { paddingBottom: DOWNLOAD_BAR_PADDING } : undefined}
+    >
       {/* Step dots */}
       <StepDots current={currentStep} total={3} />
 
