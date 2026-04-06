@@ -10,6 +10,7 @@ import { Host, Slider as ExpoSlider } from "@expo/ui/swift-ui";
 import { AIDownloadStatus } from "@/components/molecules/AIDownloadStatus";
 import type { IconProps } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
+import { OnboardingHeader } from "@/app/(main)/onboarding/components/OnboardingHeader";
 
 interface SliderScreenProps {
   /** Index in the sliderValues array (0-4) */
@@ -30,25 +31,8 @@ interface SliderScreenProps {
   nextRoute?: string;
   /** Route for "See Results" on last step */
   resultsRoute?: string;
-}
-
-function StepDots({ current, total }: { current: number; total: number }) {
-  return (
-    <View className="flex-row items-center justify-center gap-3">
-      {Array.from({ length: total }).map((_, i) => (
-        <View
-          key={i}
-          className={`rounded-full ${
-            i < current
-              ? "w-3 h-3 bg-primary"
-              : i === current
-                ? "w-3.5 h-3.5 bg-primary"
-                : "w-3 h-3 border-2 border-border"
-          }`}
-        />
-      ))}
-    </View>
-  );
+  /** Current phase of onboarding */
+  phase?: string;
 }
 
 /**
@@ -67,6 +51,7 @@ export function SliderScreen({
   total,
   nextRoute,
   resultsRoute,
+  phase = "Your Life",
 }: SliderScreenProps) {
   const router = useRouter();
   const { sliderValues, setSliderValues } = useOnboarding();
@@ -90,24 +75,20 @@ export function SliderScreen({
   };
 
   return (
-    <View className="flex-1 bg-background px-6 justify-between">
+    <View className="flex-1 bg-background justify-between">
       {/* Top content */}
-      <View className="flex-1 pt-16">
-        {/* Step dots */}
-        <StepDots current={index} total={total} />
-
-        {/* Domain chip */}
-        <View className="items-center mt-8 mb-6">
-          <View className="flex-row items-center gap-2 bg-primary/10 rounded-full px-5 py-2.5">
-            <PhosphorIcon icon={icon} size={18} color={primaryColor as string} />
-            <AppText size="sm" weight="semibold" color="primary">
-              {label}
-            </AppText>
-          </View>
-        </View>
+      <View className="flex-1">
+        <OnboardingHeader
+          phase={phase}
+          label={label}
+          icon={icon}
+          progress={(index + 1) / total}
+          currentStep={index + 1}
+          totalSteps={total}
+        />
 
         {/* Question */}
-        <View className="flex-1 justify-center">
+        <View className="flex-1 justify-center px-6">
           <AppText
             size="2xl"
             weight="bold"
@@ -119,10 +100,10 @@ export function SliderScreen({
           </AppText>
 
           {/* Slider area */}
-          <View className="bg-surface rounded-2xl mx-2 p-6" style={{ overflow: "hidden" }}>
+          <View className="bg-surface rounded-2xl p-6" style={{ overflow: "hidden" }}>
             {/* Current value */}
             <View className="items-center mb-4">
-              <AppText size="3xl" weight="bold" family="mono" color="primary">
+              <AppText size="4xl" weight="bold" family="mono" color="primary">
                 {Math.round(currentValue)}
               </AppText>
             </View>
@@ -162,7 +143,7 @@ export function SliderScreen({
       </View>
 
       {/* Bottom section — pinned */}
-      <View className="w-full pb-8 pt-4 gap-3">
+      <View className="w-full pb-8 pt-4 px-6 gap-3">
         <View className="flex-row justify-between gap-4">
           <Button
             variant="tertiary"

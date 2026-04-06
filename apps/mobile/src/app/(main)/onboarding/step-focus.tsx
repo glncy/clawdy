@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useRef } from "react";
 import { ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { AppText } from "@/components/atoms/Text";
@@ -19,6 +19,7 @@ import { Button } from "heroui-native";
 import { useOnboarding } from "./_layout";
 import { AIDownloadStatus } from "@/components/molecules/AIDownloadStatus";
 import { useCSSVariable } from "uniwind";
+import { OnboardingHeader } from "./components/OnboardingHeader";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -103,58 +104,38 @@ function useFadeIn(delay: number) {
   }));
 }
 
-// --- Saving goal mapping ---
-
-const SAVING_GOAL_LABELS: Record<string, string> = {
-  "Emergency Fund": "Build your emergency fund",
-  Travel: "Save for your dream trip",
-  House: "Work toward your own home",
-  "Debt Payoff": "Get out of debt",
-};
-
-// --- Struggle mapping ---
-
-const STRUGGLE_LABELS: Record<string, string> = {
-  "Saving money": "Get better at saving",
-  "Sleeping well": "Improve your sleep routine",
-  "Staying focused": "Build focus habits",
-  "Finding time": "Take back control of your time",
-};
-
 // --- Screen ---
 
 export default function OnboardingStepFocus() {
   const router = useRouter();
-  const { sliderValues, income, savingGoal, struggle } = useOnboarding();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const { sliderValues, income, savingGoals, struggles } = useOnboarding();
   const [primaryColor, mutedColor, warningColor] = useCSSVariable([
     "--color-primary",
     "--color-muted",
     "--color-warning",
   ]);
 
-  // Domains below 50 are focus areas
-  const focusAreas = useMemo(
-    () =>
-      DOMAIN_META.map((d, i) => ({
-        ...d,
-        index: i,
-        value: sliderValues[i],
-      })).filter((d) => d.value < 50),
-    [sliderValues],
-  );
+  // Scroll to top
+  useEffect(() => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+  }, []);
 
-  const strongAreas = useMemo(
-    () =>
-      DOMAIN_META.map((d, i) => ({
-        ...d,
-        index: i,
-        value: sliderValues[i],
-      })).filter((d) => d.value >= 50),
-    [sliderValues],
-  );
+  // Domains below 50 are focus areas
+  const focusAreas = DOMAIN_META.map((d, i) => ({
+    ...d,
+    index: i,
+    value: sliderValues[i],
+  })).filter((d) => d.value < 50);
+
+  const strongAreas = DOMAIN_META.map((d, i) => ({
+    ...d,
+    index: i,
+    value: sliderValues[i],
+  })).filter((d) => d.value >= 50);
 
   // Action items derived from onboarding answers
-  const actionItems = useMemo(() => {
+  const actionItems = (() => {
     const items: { icon: ComponentType<IconProps>; text: string }[] = [];
 
     if (income) {
@@ -168,22 +149,43 @@ export default function OnboardingStepFocus() {
       }
     }
 
-    if (savingGoal && SAVING_GOAL_LABELS[savingGoal]) {
-      items.push({
-        icon: PiggyBank,
-        text: SAVING_GOAL_LABELS[savingGoal],
-      });
+    if (savingGoals.length > 0) {
+      const goals = savingGoals.map((g) =>
+        g.startsWith("Other: ") ? g.replace("Other: ", "").trim() : g
+      );
+      
+      let text = "";
+      if (goals.length === 1) {
+        text = `Save for: ${goals[0]}`;
+      } else if (goals.length === 2) {
+        text = `Save for: ${goals.join(" and ")}`;
+      } else {
+        const last = goals.pop();
+        text = `Save for: ${goals.join(", ")}, and ${last}`;
+      }
+      items.push({ icon: PiggyBank, text });
     }
 
-    if (struggle && STRUGGLE_LABELS[struggle]) {
-      items.push({
-        icon: Lightning,
-        text: STRUGGLE_LABELS[struggle],
+    if (struggles.length > 0) {
+      const formattedStruggles = struggles.map((s) => {
+        if (s.startsWith("Other: ")) return s.replace("Other: ", "").trim();
+        return s.toLowerCase();
       });
+      
+      let text = "";
+      if (formattedStruggles.length === 1) {
+        text = `Focus on: ${formattedStruggles[0]}`;
+      } else if (formattedStruggles.length === 2) {
+        text = `Focus on: ${formattedStruggles.join(" and ")}`;
+      } else {
+        const last = formattedStruggles.pop();
+        text = `Focus on: ${formattedStruggles.join(", ")}, and ${last}`;
+      }
+      items.push({ icon: Lightning, text });
     }
 
     return items;
-  }, [income, savingGoal, struggle]);
+  })();
 
   const headerStyle = useFadeIn(200);
   const focusStyle = useFadeIn(600);
@@ -193,22 +195,19 @@ export default function OnboardingStepFocus() {
   const buttonStyle = useFadeIn(2200);
 
   return (
-    <View className="flex-1 bg-background px-6 justify-between">
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="pt-20 pb-8"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <Animated.View style={headerStyle} className="items-center mb-4">
-          <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center mb-4">
-            <PhosphorIcon
-              icon={Target}
-              weight="duotone"
-              size={32}
-              color={primaryColor as string}
-            />
-          </View>
+    <View className="flex-1 bg-background justify-between">
+      <View className="flex-1">
+        <OnboardingHeader
+          phase="Your Setup"
+          label="Plan"
+          icon={Target}
+          progress={0.5}
+          currentStep={1}
+          totalSteps={2}
+        />
+
+        {/* Fixed Header */}
+        <Animated.View style={headerStyle} className="items-center px-6 pb-6">
           <AppText
             size="2xl"
             weight="bold"
@@ -227,104 +226,113 @@ export default function OnboardingStepFocus() {
           </AppText>
         </Animated.View>
 
-        {/* Focus areas */}
-        {focusAreas.length > 0 && (
-          <Animated.View style={focusStyle} className="mt-6 gap-3">
-            <AppText size="xs" color="muted" weight="semibold" className="px-1">
-              Focus areas
-            </AppText>
-            {focusAreas.map((domain) => (
-              <View
-                key={domain.label}
-                className="flex-row items-center gap-4 bg-primary/10 rounded-2xl px-5 py-4"
-              >
-                <PhosphorIcon
-                  icon={domain.icon}
-                  weight="duotone"
-                  size={28}
-                  color={primaryColor as string}
-                />
-                <View className="flex-1">
-                  <AppText weight="semibold">{domain.label}</AppText>
-                  <AppText size="xs" color="muted">
-                    {domain.getDescription(domain.value)}
+        <ScrollView
+          ref={scrollViewRef}
+          className="flex-1 px-6"
+          contentContainerStyle={{ paddingBottom: 32 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Focus areas */}
+          {focusAreas.length > 0 && (
+            <Animated.View style={focusStyle} className="mt-2 gap-3">
+              <AppText size="xs" color="muted" weight="semibold" className="px-1">
+                Focus areas
+              </AppText>
+              {focusAreas.map((domain) => (
+                <View
+                  key={domain.label}
+                  className="flex-row items-center gap-4 bg-primary/10 rounded-xl px-5 py-4 border border-primary/20"
+                >
+                  <PhosphorIcon
+                    icon={domain.icon}
+                    weight="duotone"
+                    size={28}
+                    color={primaryColor as string}
+                  />
+                  <View className="flex-1">
+                    <AppText weight="semibold">{domain.label}</AppText>
+                    <AppText size="xs" color="muted">
+                      {domain.getDescription(domain.value)}
+                    </AppText>
+                  </View>
+                </View>
+              ))}
+            </Animated.View>
+          )}
+
+          {/* Action items from questions */}
+          {actionItems.length > 0 && (
+            <Animated.View style={actionsStyle} className="mt-6 gap-3">
+              <AppText size="xs" color="muted" weight="semibold" className="px-1">
+                Your plan
+              </AppText>
+              {actionItems.map((item, i) => (
+                <View
+                  key={i}
+                  className="flex-row items-center gap-4 bg-surface rounded-xl px-5 py-4 border border-border/50"
+                >
+                  <PhosphorIcon
+                    icon={item.icon}
+                    weight="duotone"
+                    size={24}
+                    color={warningColor as string}
+                  />
+                  <AppText size="sm" className="flex-1">
+                    {item.text}
                   </AppText>
                 </View>
-              </View>
-            ))}
-          </Animated.View>
-        )}
+              ))}
+            </Animated.View>
+          )}
 
-        {/* Action items from questions */}
-        {actionItems.length > 0 && (
-          <Animated.View style={actionsStyle} className="mt-6 gap-3">
-            <AppText size="xs" color="muted" weight="semibold" className="px-1">
-              Your plan
+          {/* Strong areas */}
+          {strongAreas.length > 0 && (
+            <Animated.View style={strongStyle} className="mt-6 gap-3">
+              <AppText size="xs" color="muted" weight="semibold" className="px-1">
+                {focusAreas.length > 0 ? "Looking good" : "Your strengths"}
+              </AppText>
+              {strongAreas.map((domain) => (
+                <View
+                  key={domain.label}
+                  className="flex-row items-center gap-4 bg-surface rounded-xl px-5 py-3 border border-border/50"
+                >
+                  <PhosphorIcon
+                    icon={domain.icon}
+                    weight="regular"
+                    size={22}
+                    color={mutedColor as string}
+                  />
+                  <AppText size="sm" color="muted" className="flex-1">
+                    {domain.label}
+                  </AppText>
+                  <PhosphorIcon
+                    icon={CheckCircle}
+                    weight="fill"
+                    size={18}
+                    color={primaryColor as string}
+                  />
+                </View>
+              ))}
+            </Animated.View>
+          )}
+
+          {/* Motivational text */}
+          <Animated.View style={textStyle} className="mt-8">
+            <AppText
+              align="center"
+              color="muted"
+              family="headline"
+              className="px-4"
+            >
+              clawdi will help you build better habits{"\n"}
+              one day at a time.
             </AppText>
-            {actionItems.map((item, i) => (
-              <View
-                key={i}
-                className="flex-row items-center gap-4 bg-surface rounded-2xl px-5 py-4"
-              >
-                <PhosphorIcon
-                  icon={item.icon}
-                  weight="duotone"
-                  size={24}
-                  color={warningColor as string}
-                />
-                <AppText size="sm">{item.text}</AppText>
-              </View>
-            ))}
           </Animated.View>
-        )}
-
-        {/* Strong areas */}
-        {strongAreas.length > 0 && (
-          <Animated.View style={strongStyle} className="mt-6 gap-3">
-            <AppText size="xs" color="muted" weight="semibold" className="px-1">
-              {focusAreas.length > 0 ? "Looking good" : "Your strengths"}
-            </AppText>
-            {strongAreas.map((domain) => (
-              <View
-                key={domain.label}
-                className="flex-row items-center gap-4 bg-surface rounded-2xl px-5 py-3"
-              >
-                <PhosphorIcon
-                  icon={domain.icon}
-                  weight="regular"
-                  size={22}
-                  color={mutedColor as string}
-                />
-                <AppText size="sm" color="muted" className="flex-1">
-                  {domain.label}
-                </AppText>
-                <PhosphorIcon
-                  icon={CheckCircle}
-                  weight="fill"
-                  size={18}
-                  color={primaryColor as string}
-                />
-              </View>
-            ))}
-          </Animated.View>
-        )}
-
-        {/* Motivational text */}
-        <Animated.View style={textStyle} className="mt-8">
-          <AppText
-            align="center"
-            color="muted"
-            family="headline"
-            className="px-4"
-          >
-            clawdi will help you build better habits{"\n"}
-            one day at a time.
-          </AppText>
-        </Animated.View>
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {/* Bottom section */}
-      <Animated.View style={buttonStyle} className="w-full pb-8 pt-4 gap-3">
+      <Animated.View style={buttonStyle} className="w-full pb-8 pt-4 px-6 gap-3">
         <Button
           variant="primary"
           size="lg"

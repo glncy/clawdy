@@ -14,10 +14,10 @@ interface OnboardingData {
   setSliderValues: (values: number[]) => void;
   income: string;
   setIncome: (v: string) => void;
-  savingGoal: string;
-  setSavingGoal: (v: string) => void;
-  struggle: string;
-  setStruggle: (v: string) => void;
+  savingGoals: string[];
+  setSavingGoals: (v: string[]) => void;
+  struggles: string[];
+  setStruggles: (v: string[]) => void;
   name: string;
   setName: (v: string) => void;
 }
@@ -39,8 +39,8 @@ function OnboardingProvider({ children }: { children: ReactNode }) {
     50, 50, 50, 50, 50,
   ]);
   const [income, setIncome] = useState("");
-  const [savingGoal, setSavingGoal] = useState("");
-  const [struggle, setStruggle] = useState("");
+  const [savingGoals, setSavingGoals] = useState<string[]>([]);
+  const [struggles, setStruggles] = useState<string[]>([]);
   const [name, setName] = useState("");
 
   return (
@@ -50,10 +50,10 @@ function OnboardingProvider({ children }: { children: ReactNode }) {
         setSliderValues,
         income,
         setIncome,
-        savingGoal,
-        setSavingGoal,
-        struggle,
-        setStruggle,
+        savingGoals,
+        setSavingGoals,
+        struggles,
+        setStruggles,
         name,
         setName,
       }}

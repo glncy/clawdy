@@ -7,10 +7,12 @@ const STRUGGLES = [
   { label: "Sleeping well", emoji: "😴" },
   { label: "Staying focused", emoji: "🎯" },
   { label: "Finding time", emoji: "⏰" },
+  { label: "Eating healthy", emoji: "🥗" },
+  { label: "Exercising", emoji: "🏃" },
 ];
 
 export default function QuestionStruggle() {
-  const { struggle, setStruggle } = useOnboarding();
+  const { struggles, setStruggles } = useOnboarding();
 
   return (
     <QuestionScreen
@@ -18,9 +20,11 @@ export default function QuestionStruggle() {
       total={3}
       icon={Lightning}
       label="Daily Life"
-      question="What is your biggest daily struggle?"
-      value={struggle}
-      onValueChange={setStruggle}
+      question="What are your biggest daily struggles?"
+      values={struggles}
+      onValuesChange={setStruggles}
+      multiSelect
+      showOther
       nextRoute="/(main)/onboarding/step-focus"
       isLast
       options={STRUGGLES}

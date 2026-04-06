@@ -8,6 +8,7 @@ import { Button, Input } from "heroui-native";
 import { useOnboarding } from "./_layout";
 import { AIDownloadStatus } from "@/components/molecules/AIDownloadStatus";
 import { useCSSVariable } from "uniwind";
+import { OnboardingHeader } from "./components/OnboardingHeader";
 import {
   KeyboardAvoidingView,
   useKeyboardHandler,
@@ -80,57 +81,66 @@ export default function OnboardingStepName() {
 
   return (
     <KeyboardAvoidingView behavior="padding" className="flex-1">
-      <View className="flex-1 bg-background px-6 justify-between">
-        {/* Content */}
-        <View className="flex-1 justify-center items-center">
-          <Animated.View style={iconStyle} className="mb-6">
-            <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center">
-              <PhosphorIcon
-                icon={User}
-                weight="duotone"
-                size={32}
-                color={primaryColor as string}
-              />
-            </View>
-          </Animated.View>
+      <View className="flex-1 bg-background justify-between">
+        <View className="flex-1">
+          <OnboardingHeader
+            phase="Your Setup"
+            label="Profile"
+            icon={User}
+            progress={1}
+            currentStep={2}
+            totalSteps={2}
+          />
 
-          <Animated.View style={headlineStyle} className="items-center mb-2">
-            <AppText
-              size="2xl"
-              weight="bold"
-              family="headline"
-              align="center"
-            >
-              What should we call you?
-            </AppText>
-          </Animated.View>
+          {/* Content */}
+          <View className="flex-1 justify-center items-center px-6">
+            <Animated.View style={iconStyle} className="mb-6">
+              <View className="w-16 h-16 rounded-full bg-primary/10 items-center justify-center">
+                <PhosphorIcon
+                  icon={User}
+                  weight="duotone"
+                  size={32}
+                  color={primaryColor as string}
+                />
+              </View>
+            </Animated.View>
 
-          <Animated.View style={headlineStyle} className="items-center mb-8">
-            <AppText align="center" color="muted">
-              So clawdi can greet you each morning.
-            </AppText>
-          </Animated.View>
+            <Animated.View style={headlineStyle} className="items-center mb-2">
+              <AppText
+                size="2xl"
+                weight="bold"
+                family="headline"
+                align="center"
+              >
+                What should we call you?
+              </AppText>
+            </Animated.View>
 
-          <Animated.View style={inputStyle} className="w-full">
-            <View className="bg-surface rounded-2xl p-5">
+            <Animated.View style={headlineStyle} className="items-center mb-8">
+              <AppText align="center" color="muted">
+                So clawdi can greet you each morning.
+              </AppText>
+            </Animated.View>
+
+            <Animated.View style={inputStyle} className="w-full">
               <Input
                 value={name}
                 onChangeText={(text: string) => setName(text)}
                 placeholder="Your name"
-                autoFocus
                 autoCapitalize="words"
-                className="text-center"
+                size="lg"
+                className="text-center text-lg h-16"
               />
-            </View>
-          </Animated.View>
+            </Animated.View>
+          </View>
         </View>
 
         {/* Bottom section */}
-        <Animated.View style={buttonStyle} className="w-full pb-8 pt-4 gap-3">
+        <Animated.View style={buttonStyle} className="w-full pb-8 pt-4 px-6 gap-3">
           <Button
             variant="primary"
             size="lg"
-            className="w-full rounded-2xl"
+            className="w-full rounded-xl"
             onPress={() => router.replace("/(main)/(tabs)/home")}
             isDisabled={!name.trim()}
           >

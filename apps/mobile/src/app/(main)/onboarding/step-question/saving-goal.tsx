@@ -7,10 +7,12 @@ const SAVING_GOALS = [
   { label: "Travel", emoji: "✈️" },
   { label: "House", emoji: "🏠" },
   { label: "Debt Payoff", emoji: "💳" },
+  { label: "Retirement", emoji: "🏖️" },
+  { label: "Education", emoji: "🎓" },
 ];
 
 export default function QuestionSavingGoal() {
-  const { savingGoal, setSavingGoal } = useOnboarding();
+  const { savingGoals, setSavingGoals } = useOnboarding();
 
   return (
     <QuestionScreen
@@ -19,8 +21,10 @@ export default function QuestionSavingGoal() {
       icon={Target}
       label="Goals"
       question="What are you saving for?"
-      value={savingGoal}
-      onValueChange={setSavingGoal}
+      values={savingGoals}
+      onValuesChange={setSavingGoals}
+      multiSelect
+      showOther
       nextRoute="/(main)/onboarding/step-question/struggle"
       options={SAVING_GOALS}
     />
