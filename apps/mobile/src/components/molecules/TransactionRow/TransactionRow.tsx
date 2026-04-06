@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import { AppText } from "@/components/atoms/Text";
+import { getCategoryIcon } from "@/utils/categoryIcon";
 import type { Transaction } from "@/types";
 
 interface TransactionRowProps {
@@ -7,8 +8,15 @@ interface TransactionRowProps {
 }
 
 export const TransactionRow = ({ transaction }: TransactionRowProps) => {
+  const currencySymbol =
+    transaction.currency === "USD" ? "$" : transaction.currency;
+  const isExpense = transaction.type === "expense";
+
   return (
-    <View className="flex-row items-center justify-between rounded-xl bg-surface p-3">
+    <View className="flex-row items-center gap-3 rounded-xl bg-surface p-3">
+      <View className="h-9 w-9 items-center justify-center rounded-lg bg-default">
+        <AppText size="base">{getCategoryIcon(transaction.category)}</AppText>
+      </View>
       <View className="flex-1 gap-0.5">
         <AppText size="sm" weight="medium">
           {transaction.item}
@@ -17,8 +25,15 @@ export const TransactionRow = ({ transaction }: TransactionRowProps) => {
           {transaction.category}
         </AppText>
       </View>
-      <AppText size="sm" weight="semibold" family="mono" color="foreground" selectable>
-        -{transaction.currency === "USD" ? "$" : transaction.currency}
+      <AppText
+        size="sm"
+        weight="semibold"
+        family="mono"
+        color={isExpense ? "foreground" : "primary"}
+        selectable
+      >
+        {isExpense ? "-" : "+"}
+        {currencySymbol}
         {transaction.amount.toFixed(2)}
       </AppText>
     </View>

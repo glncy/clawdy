@@ -8,6 +8,8 @@ import type {
   Spark,
   QuickListItem,
   DomainScore,
+  CategoryBudget,
+  DailySpending,
 } from "@/types";
 
 export const MOCK_DOMAIN_SCORES: DomainScore[] = [
@@ -79,3 +81,21 @@ export const MOCK_INCOME = 3200;
 export const MOCK_SPENT = 750;
 export const MOCK_STRESS_LEVEL = 4;
 export const MOCK_WEEKLY_SLEEP_AVG = 6.5;
+
+export const MOCK_CATEGORY_BUDGETS: CategoryBudget[] = [
+  { category: "Food", icon: "🍽", budgetAmount: 200, spentAmount: 55 },
+  { category: "Transport", icon: "🚌", budgetAmount: 100, spentAmount: 2.5 },
+  { category: "Groceries", icon: "🛒", budgetAmount: 300, spentAmount: 32 },
+  { category: "Shopping", icon: "🛍", budgetAmount: 150, spentAmount: 0 },
+  { category: "Bills", icon: "📄", budgetAmount: 400, spentAmount: 120 },
+];
+
+export const MOCK_DAILY_SPENDING: DailySpending[] = [
+  { date: "2026-03-31", amount: 21 },
+  { date: "2026-04-01", amount: 36.5 },
+  { date: "2026-04-02", amount: 15 },
+  { date: "2026-04-03", amount: 55 },
+  { date: "2026-04-04", amount: 42 },
+  { date: "2026-04-05", amount: 28 },
+  { date: "2026-04-06", amount: 12 },
+];

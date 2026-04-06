@@ -1,8 +1,7 @@
 import { Stack } from "expo-router";
 import { useTabHeaderTitleStyle } from "@/hooks/useTabHeaderTitleStyle";
-import { HeaderGearButton } from "@/components/molecules/HeaderGearButton";
 
-export default function LifeStack() {
+export default function SettingsStack() {
   const headerTitleStyle = useTabHeaderTitleStyle();
 
   return (
@@ -10,7 +9,6 @@ export default function LifeStack() {
       screenOptions={{
         headerTransparent: true,
         headerTitleStyle,
-        headerRight: () => <HeaderGearButton />,
       }}
     />
   );

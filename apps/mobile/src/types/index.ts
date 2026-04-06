@@ -74,3 +74,15 @@ export interface DomainScore {
   icon: string;
   progress: number;
 }
+
+export interface CategoryBudget {
+  category: string;
+  icon: string;
+  budgetAmount: number;
+  spentAmount: number;
+}
+
+export interface DailySpending {
+  date: string;
+  amount: number;
+}
