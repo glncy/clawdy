@@ -43,7 +43,7 @@ const DOMAIN_META: DomainMeta[] = [
     label: "Finances",
     icon: CurrencyDollar,
     getDescription: (v) =>
-      v < 30
+      v < 3
         ? "Your finances feel stressful — we'll build a plan"
         : "Your finances need some attention",
   },
@@ -51,7 +51,7 @@ const DOMAIN_META: DomainMeta[] = [
     label: "Time",
     icon: Clock,
     getDescription: (v) =>
-      v < 30
+      v < 3
         ? "Time feels out of control — let's get intentional"
         : "Your time management could improve",
   },
@@ -59,7 +59,7 @@ const DOMAIN_META: DomainMeta[] = [
     label: "Health",
     icon: Heartbeat,
     getDescription: (v) =>
-      v < 30
+      v < 3
         ? "Your energy is low — small habits will help"
         : "Your health needs a bit more care",
   },
@@ -67,7 +67,7 @@ const DOMAIN_META: DomainMeta[] = [
     label: "Relationships",
     icon: UsersThree,
     getDescription: (v) =>
-      v < 30
+      v < 3
         ? "You feel disconnected — we'll help you stay close"
         : "Your relationships could use more nurturing",
   },
@@ -75,7 +75,7 @@ const DOMAIN_META: DomainMeta[] = [
     label: "Growth",
     icon: Brain,
     getDescription: (v) =>
-      v < 30
+      v < 3
         ? "Growth feels stagnant — let's change that"
         : "You're ready to grow more",
   },
@@ -90,11 +90,11 @@ function useFadeIn(delay: number) {
   useEffect(() => {
     opacity.value = withDelay(
       delay,
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) }),
+      withTiming(1, { duration: 300, easing: Easing.bezier(0.25, 0.1, 0.25, 1) }),
     );
     translateY.value = withDelay(
       delay,
-      withTiming(0, { duration: 600, easing: Easing.out(Easing.ease) }),
+      withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) }),
     );
   }, [delay, opacity, translateY]);
 
@@ -109,7 +109,16 @@ function useFadeIn(delay: number) {
 export default function OnboardingStepFocus() {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
-  const { sliderValues, income, savingGoals, struggles } = useOnboarding();
+  const { 
+    moneyScore, 
+    timeScore, 
+    healthScore, 
+    peopleScore, 
+    mindScore, 
+    income, 
+    savingGoals, 
+    struggles 
+  } = useOnboarding();
   const [primaryColor, mutedColor, warningColor] = useCSSVariable([
     "--color-primary",
     "--color-muted",
@@ -121,18 +130,17 @@ export default function OnboardingStepFocus() {
     scrollViewRef.current?.scrollTo({ y: 0, animated: false });
   }, []);
 
-  // Domains below 50 are focus areas
-  const focusAreas = DOMAIN_META.map((d, i) => ({
-    ...d,
-    index: i,
-    value: sliderValues[i],
-  })).filter((d) => d.value < 50);
+  const domainValues = [
+    { ...DOMAIN_META[0], value: moneyScore ?? 0 },
+    { ...DOMAIN_META[1], value: timeScore ?? 0 },
+    { ...DOMAIN_META[2], value: healthScore ?? 0 },
+    { ...DOMAIN_META[3], value: peopleScore ?? 0 },
+    { ...DOMAIN_META[4], value: mindScore ?? 0 },
+  ];
 
-  const strongAreas = DOMAIN_META.map((d, i) => ({
-    ...d,
-    index: i,
-    value: sliderValues[i],
-  })).filter((d) => d.value >= 50);
+  // Domains below 3 are focus areas
+  const focusAreas = domainValues.filter((d) => d.value > 0 && d.value < 3);
+  const strongAreas = domainValues.filter((d) => d.value >= 3);
 
   // Action items derived from onboarding answers
   const actionItems = (() => {
@@ -187,12 +195,12 @@ export default function OnboardingStepFocus() {
     return items;
   })();
 
-  const headerStyle = useFadeIn(200);
-  const focusStyle = useFadeIn(600);
-  const actionsStyle = useFadeIn(1000);
-  const strongStyle = useFadeIn(1400);
-  const textStyle = useFadeIn(1800);
-  const buttonStyle = useFadeIn(2200);
+  const headerStyle = useFadeIn(0);
+  const focusStyle = useFadeIn(150);
+  const actionsStyle = useFadeIn(300);
+  const strongStyle = useFadeIn(450);
+  const textStyle = useFadeIn(600);
+  const buttonStyle = useFadeIn(750);
 
   return (
     <View className="flex-1 bg-background justify-between">

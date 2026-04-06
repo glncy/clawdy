@@ -1,14 +1,12 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { View, ScrollView, NativeModules, Platform, Keyboard } from "react-native";
+import { View, ScrollView, Keyboard } from "react-native";
 import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AppText } from "@/components/atoms/Text";
-import { PhosphorIcon } from "@/components/atoms/PhosphorIcon";
 import { CurrencyDollar } from "phosphor-react-native";
 import { Button, Input } from "heroui-native";
-import { useCSSVariable } from "uniwind";
 import { AIDownloadStatus } from "@/components/molecules/AIDownloadStatus";
 import { useOnboarding } from "../_layout";
 import {
@@ -21,56 +19,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { OnboardingHeader } from "../components/OnboardingHeader";
-
-// --- Locale currency detection ---
-
-// Map common locale regions to their currency codes
-const REGION_CURRENCY: Record<string, string> = {
-  PH: "PHP", US: "USD", GB: "GBP", EU: "EUR", JP: "JPY", KR: "KRW",
-  CN: "CNY", IN: "INR", AU: "AUD", CA: "CAD", SG: "SGD", MY: "MYR",
-  TH: "THB", ID: "IDR", VN: "VND", BR: "BRL", MX: "MXN", AE: "AED",
-  SA: "SAR", DE: "EUR", FR: "EUR", IT: "EUR", ES: "EUR", NL: "EUR",
-  NZ: "NZD", HK: "HKD", TW: "TWD", ZA: "ZAR", NG: "NGN", KE: "KES",
-};
-
-function getDeviceRegion(): string {
-  try {
-    if (Platform.OS === "ios") {
-      // iOS: AppleLocale is the full locale (e.g., "en_PH"), or check AppleLanguages
-      const settings = NativeModules.SettingsManager?.settings;
-      const appleLocale: string =
-        settings?.AppleLocale ?? settings?.AppleLanguages?.[0] ?? "";
-      // Extract region: "en_PH" → "PH", "fil-PH" → "PH"
-      const parts = appleLocale.replace(/_/g, "-").split("-");
-      return parts[parts.length - 1]?.toUpperCase() ?? "";
-    }
-    // Android: localeIdentifier is "en_PH"
-    const localeId: string =
-      NativeModules.I18nManager?.localeIdentifier ?? "";
-    const parts = localeId.replace(/_/g, "-").split("-");
-    return parts[parts.length - 1]?.toUpperCase() ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function getCurrencySymbol(): string {
-  try {
-    const region = getDeviceRegion();
-    const currency = REGION_CURRENCY[region] ?? "USD";
-    const locale = Intl.DateTimeFormat().resolvedOptions().locale;
-
-    const parts = new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-      currencyDisplay: "narrowSymbol",
-    }).formatToParts(0);
-
-    return parts.find((p) => p.type === "currency")?.value ?? "$";
-  } catch {
-    return "$";
-  }
-}
+import * as Localization from "expo-localization";
 
 // --- Schema ---
 
@@ -89,8 +38,9 @@ export default function QuestionIncome() {
   const router = useRouter();
   const scrollViewRef = useRef<ScrollView>(null);
   const { income, setIncome } = useOnboarding();
-  const [primaryColor] = useCSSVariable(["--color-primary"]);
-  const currencySymbol = useMemo(() => getCurrencySymbol(), []);
+  const currencySymbol = useMemo(() => {
+    return Localization.getLocales()[0]?.currencySymbol ?? "$";
+  }, []);
 
   // Scroll to top
   useEffect(() => {
@@ -188,7 +138,6 @@ export default function QuestionIncome() {
                     }}
                     keyboardType="decimal-pad"
                     placeholder={`${currencySymbol} 0.00`}
-                    size="lg"
                     className="text-center text-lg h-16"
                     isInvalid={!!errors.income}
                   />

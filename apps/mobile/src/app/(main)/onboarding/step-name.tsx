@@ -9,6 +9,7 @@ import { useOnboarding } from "./_layout";
 import { AIDownloadStatus } from "@/components/molecules/AIDownloadStatus";
 import { useCSSVariable } from "uniwind";
 import { OnboardingHeader } from "./components/OnboardingHeader";
+import { useUserStore } from "@/stores/useUserStore";
 import {
   KeyboardAvoidingView,
   useKeyboardHandler,
@@ -23,16 +24,16 @@ import Animated, {
 
 function useFadeIn(delay: number) {
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(16);
+  const translateY = useSharedValue(14);
 
   useEffect(() => {
     opacity.value = withDelay(
       delay,
-      withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) })
+      withTiming(1, { duration: 300, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
     );
     translateY.value = withDelay(
       delay,
-      withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) })
+      withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) })
     );
   }, [delay, opacity, translateY]);
 
@@ -44,7 +45,19 @@ function useFadeIn(delay: number) {
 
 export default function OnboardingStepName() {
   const router = useRouter();
-  const { name, setName } = useOnboarding();
+  const {
+    name,
+    setName,
+    income,
+    moneyScore,
+    timeScore,
+    healthScore,
+    peopleScore,
+    mindScore,
+    savingGoals,
+    struggles,
+  } = useOnboarding();
+  const setUserData = useUserStore((s) => s.setUserData);
   const [primaryColor] = useCSSVariable(["--color-primary"]);
 
   // Keyboard-driven status visibility
@@ -74,10 +87,10 @@ export default function OnboardingStepName() {
     overflow: "hidden" as const,
   }));
 
-  const iconStyle = useFadeIn(200);
-  const headlineStyle = useFadeIn(400);
-  const inputStyle = useFadeIn(600);
-  const buttonStyle = useFadeIn(800);
+  const iconStyle = useFadeIn(0);
+  const headlineStyle = useFadeIn(100);
+  const inputStyle = useFadeIn(200);
+  const buttonStyle = useFadeIn(300);
 
   return (
     <KeyboardAvoidingView behavior="padding" className="flex-1">
@@ -128,7 +141,6 @@ export default function OnboardingStepName() {
                 onChangeText={(text: string) => setName(text)}
                 placeholder="Your name"
                 autoCapitalize="words"
-                size="lg"
                 className="text-center text-lg h-16"
               />
             </Animated.View>
@@ -141,7 +153,21 @@ export default function OnboardingStepName() {
             variant="primary"
             size="lg"
             className="w-full rounded-xl"
-            onPress={() => router.replace("/(main)/(tabs)/home")}
+            onPress={() => {
+              setUserData({
+                name,
+                income,
+                moneyScore,
+                timeScore,
+                healthScore,
+                peopleScore,
+                mindScore,
+                savingGoals,
+                struggles,
+                hasCompletedOnboarding: true,
+              });
+              router.replace("/(main)/(tabs)/home");
+            }}
             isDisabled={!name.trim()}
           >
             <Button.Label>Enter Your Dashboard</Button.Label>

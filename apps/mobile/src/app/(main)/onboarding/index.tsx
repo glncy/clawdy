@@ -28,16 +28,16 @@ const splashIcon = require("@/assets/images/splash-icon.png");
 
 function useFadeInUp(delay: number) {
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(24);
+  const translateY = useSharedValue(20);
 
   useEffect(() => {
     opacity.value = withDelay(
       delay,
-      withTiming(1, { duration: 500, easing: Easing.out(Easing.ease) })
+      withTiming(1, { duration: 300, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
     );
     translateY.value = withDelay(
       delay,
-      withTiming(0, { duration: 500, easing: Easing.out(Easing.ease) })
+      withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) })
     );
   }, [delay, opacity, translateY]);
 
@@ -52,10 +52,10 @@ export default function OnboardingIndex() {
   const [primaryColor] = useCSSVariable(["--color-primary"]);
 
   const style0 = useFadeInUp(0);
-  const style1 = useFadeInUp(200);
-  const style2 = useFadeInUp(400);
-  const style3 = useFadeInUp(600);
-  const style4 = useFadeInUp(800);
+  const style1 = useFadeInUp(100);
+  const style2 = useFadeInUp(200);
+  const style3 = useFadeInUp(300);
+  const style4 = useFadeInUp(400);
 
   return (
     <View className="flex-1 bg-background px-6 justify-between">
@@ -128,7 +128,7 @@ export default function OnboardingIndex() {
           variant="primary"
           size="lg"
           className="w-full rounded-2xl"
-          onPress={() => router.push("/(main)/onboarding/step-slider/money")}
+          onPress={() => router.push("/(main)/onboarding/step-assessment/money")}
         >
           <Button.Label>Start</Button.Label>
         </Button>

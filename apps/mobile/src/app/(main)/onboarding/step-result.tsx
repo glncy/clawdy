@@ -38,46 +38,46 @@ const DOMAINS: DomainConfig[] = [
   {
     icon: CurrencyDollar,
     phrases: [
-      { threshold: 30, text: "Your finances feel stressful" },
-      { threshold: 50, text: "Your finances need attention" },
-      { threshold: 70, text: "Your finances are okay" },
-      { threshold: 101, text: "Your finances feel secure" },
+      { threshold: 2, text: "Your finances feel stressful" },
+      { threshold: 3, text: "Your finances need attention" },
+      { threshold: 4, text: "Your finances are okay" },
+      { threshold: 6, text: "Your finances feel secure" },
     ],
   },
   {
     icon: Clock,
     phrases: [
-      { threshold: 30, text: "Your time feels out of control" },
-      { threshold: 50, text: "Time is slipping away" },
-      { threshold: 70, text: "You manage your time okay" },
-      { threshold: 101, text: "You control your time well" },
+      { threshold: 2, text: "Your time feels out of control" },
+      { threshold: 3, text: "Time is slipping away" },
+      { threshold: 4, text: "You manage your time okay" },
+      { threshold: 6, text: "You control your time well" },
     ],
   },
   {
     icon: Heartbeat,
     phrases: [
-      { threshold: 30, text: "Your energy is running low" },
-      { threshold: 50, text: "Your health needs care" },
-      { threshold: 70, text: "Your health is decent" },
-      { threshold: 101, text: "Your energy is strong" },
+      { threshold: 2, text: "Your energy is running low" },
+      { threshold: 3, text: "Your health needs care" },
+      { threshold: 4, text: "Your health is decent" },
+      { threshold: 6, text: "Your energy is strong" },
     ],
   },
   {
     icon: UsersThree,
     phrases: [
-      { threshold: 30, text: "You feel disconnected from people" },
-      { threshold: 50, text: "Your relationships need nurturing" },
-      { threshold: 70, text: "Your connections are okay" },
-      { threshold: 101, text: "You feel close to people you love" },
+      { threshold: 2, text: "You feel disconnected from people" },
+      { threshold: 3, text: "Your relationships need nurturing" },
+      { threshold: 4, text: "Your connections are okay" },
+      { threshold: 6, text: "You feel close to people you love" },
     ],
   },
   {
     icon: Brain,
     phrases: [
-      { threshold: 30, text: "Growth feels stagnant" },
-      { threshold: 50, text: "You want to grow more" },
-      { threshold: 70, text: "You're learning at your own pace" },
-      { threshold: 101, text: "You're actively growing" },
+      { threshold: 2, text: "Growth feels stagnant" },
+      { threshold: 3, text: "You want to grow more" },
+      { threshold: 4, text: "You're learning at your own pace" },
+      { threshold: 6, text: "You're actively growing" },
     ],
   },
 ];
@@ -94,16 +94,16 @@ function getDomainPhrase(domainIndex: number, value: number): string {
 
 function useFadeIn(delay: number) {
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(16);
+  const translateY = useSharedValue(14);
 
   useEffect(() => {
     opacity.value = withDelay(
       delay,
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) })
+      withTiming(1, { duration: 300, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
     );
     translateY.value = withDelay(
       delay,
-      withTiming(0, { duration: 600, easing: Easing.out(Easing.ease) })
+      withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) })
     );
   }, [delay, opacity, translateY]);
 
@@ -115,16 +115,16 @@ function useFadeIn(delay: number) {
 
 function useFadeInScale(delay: number) {
   const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.8);
+  const scale = useSharedValue(0.85);
 
   useEffect(() => {
     opacity.value = withDelay(
       delay,
-      withTiming(1, { duration: 800, easing: Easing.out(Easing.ease) })
+      withTiming(1, { duration: 350, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
     );
     scale.value = withDelay(
       delay,
-      withTiming(1, { duration: 800, easing: Easing.out(Easing.back(2)) })
+      withTiming(1, { duration: 400, easing: Easing.out(Easing.back(1.5)) })
     );
   }, [delay, opacity, scale]);
 
@@ -138,15 +138,21 @@ function useFadeInScale(delay: number) {
 
 export default function OnboardingStepResult() {
   const router = useRouter();
-  const { sliderValues } = useOnboarding();
-  const [primaryColor, mutedColor] = useCSSVariable([
+  const { moneyScore, timeScore, healthScore, peopleScore, mindScore } = useOnboarding();
+  const [primaryColor] = useCSSVariable([
     "--color-primary",
-    "--color-muted",
   ]);
 
   // Determine weak and strong domains
-  const weakDomains = DOMAINS.map((d, i) => ({ ...d, index: i, value: sliderValues[i] }))
-    .filter((d) => d.value < 50);
+  const domainValues = [
+    { ...DOMAINS[0], index: 0, value: moneyScore ?? 0 },
+    { ...DOMAINS[1], index: 1, value: timeScore ?? 0 },
+    { ...DOMAINS[2], index: 2, value: healthScore ?? 0 },
+    { ...DOMAINS[3], index: 3, value: peopleScore ?? 0 },
+    { ...DOMAINS[4], index: 4, value: mindScore ?? 0 },
+  ];
+
+  const weakDomains = domainValues.filter((d) => d.value > 0 && d.value < 3);
   const strongCount = 5 - weakDomains.length;
 
   // Dynamic headline + subtext
@@ -175,19 +181,19 @@ export default function OnboardingStepResult() {
 
   useEffect(() => {
     iconOpacity.value = withDelay(
-      300,
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) })
+      100,
+      withTiming(1, { duration: 300, easing: Easing.bezier(0.25, 0.1, 0.25, 1) })
     );
     iconScale.value = withDelay(
-      300,
-      withTiming(1, { duration: 600, easing: Easing.out(Easing.back(2)) })
+      100,
+      withTiming(1, { duration: 350, easing: Easing.out(Easing.back(1.5)) })
     );
     pulseScale.value = withDelay(
-      1000,
+      500,
       withRepeat(
         withSequence(
-          withTiming(1.08, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+          withTiming(1.06, { duration: 1200, easing: Easing.inOut(Easing.cubic) }),
+          withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.cubic) })
         ),
         -1,
         true
@@ -200,10 +206,10 @@ export default function OnboardingStepResult() {
     transform: [{ scale: iconScale.value * pulseScale.value }],
   }));
 
-  const headlineStyle = useFadeIn(700);
-  const domainsStyle = useFadeIn(1200);
-  const pivotStyle = useFadeInScale(1800);
-  const buttonStyle = useFadeIn(2200);
+  const headlineStyle = useFadeIn(300);
+  const domainsStyle = useFadeIn(500);
+  const pivotStyle = useFadeInScale(800);
+  const buttonStyle = useFadeIn(1000);
 
   return (
     <View className="flex-1 bg-background px-6 justify-between">
