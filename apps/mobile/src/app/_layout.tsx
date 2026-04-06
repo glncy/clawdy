@@ -93,7 +93,7 @@ export default function RootLayout() {
       ]}
     >
       <StatusBar style="auto" />
-      <Stack />
+      <Stack screenOptions={{ headerShown: false }} />
     </RootProviders>
   );
 }
