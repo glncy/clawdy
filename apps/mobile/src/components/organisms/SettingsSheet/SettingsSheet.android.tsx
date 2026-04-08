@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, Pressable, ScrollView } from "react-native";
+import React, { useState } from "react";
+import { View, ScrollView } from "react-native";
 import {
   ModalBottomSheet,
   Host,
@@ -21,10 +21,11 @@ import {
   Repeat,
   ChartLine,
 } from "phosphor-react-native";
-import { Separator, Dialog, Button } from "heroui-native";
+import { Separator, Dialog, Button, ListGroup } from "heroui-native";
 import { VersionTap } from "@/components/molecules/VersionTap";
 import { useCSSVariable } from "uniwind";
 import { useSettingsSheetStore } from "@/stores/useSettingsSheetStore";
+
 import { useUserStore } from "@/stores/useUserStore";
 import { useAIStore } from "@/stores/useAIStore";
 import type { ComponentType } from "react";
@@ -38,19 +39,106 @@ interface MenuItem {
   onPress?: () => void;
 }
 
+const MAIN_ITEMS: MenuItem[] = [
+  {
+    icon: UsersThree,
+    label: "People",
+    description: "Contacts & relationships",
+    onPress: () => router.push("/(main)/(tabs)/people" as never),
+  },
+  { icon: Crown, label: "Premium", description: "Trial & purchase" },
+  {
+    icon: Brain,
+    label: "Local AI",
+    description: "Model & inference",
+    onPress: () => router.push("/home/ai-test" as never),
+  },
+];
+
+const SETTINGS_ITEMS: MenuItem[] = [
+  { icon: Bell, label: "Notifications", description: "Reminders & alerts" },
+  { icon: Gear, label: "Appearance", description: "Theme & display" },
+  { icon: Export, label: "Export Data", description: "CSV or JSON" },
+  { icon: Code, label: "View Source Code", description: "GitHub repository" },
+];
+
 const FINANCE_ITEMS: MenuItem[] = [
-  { icon: Tag, label: "Manage Categories", description: "Add, edit, or reorder" },
+  {
+    icon: Tag,
+    label: "Manage Categories",
+    description: "Add, edit, or reorder",
+    onPress: () => router.push("/(main)/manage-categories"),
+  },
   { icon: Wallet, label: "Budget Settings", description: "Monthly limits & alerts" },
   { icon: Repeat, label: "Recurring Bills", description: "Manage subscriptions" },
   { icon: ChartLine, label: "Finance Insight", description: "AI-powered analysis" },
 ];
 
+function SettingsListGroup({
+  items,
+  close,
+}: {
+  items: MenuItem[];
+  close: () => void;
+}) {
+  const [dangerColor, primaryColor] = useCSSVariable([
+    "--color-danger",
+    "--color-primary",
+  ]);
+
+  return (
+    <ListGroup>
+      {items.map((item, i) => {
+        const Icon = item.icon;
+        return (
+          <React.Fragment key={item.label}>
+            {i > 0 && <Separator className="mx-4" />}
+            <ListGroup.Item
+              onPress={() => {
+                if (item.onPress) {
+                  close();
+                  item.onPress();
+                }
+              }}
+            >
+              <ListGroup.ItemPrefix>
+                <View
+                  className={`h-9 w-9 items-center justify-center rounded-lg ${
+                    item.danger ? "bg-danger/15" : "bg-primary/10"
+                  }`}
+                >
+                  <Icon
+                    size={18}
+                    weight="fill"
+                    color={
+                      item.danger
+                        ? (dangerColor as string)
+                        : (primaryColor as string)
+                    }
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle
+                  className={item.danger ? "text-danger" : ""}
+                >
+                  {item.label}
+                </ListGroup.ItemTitle>
+                <ListGroup.ItemDescription>
+                  {item.description}
+                </ListGroup.ItemDescription>
+              </ListGroup.ItemContent>
+              {!item.danger && <ListGroup.ItemSuffix />}
+            </ListGroup.Item>
+          </React.Fragment>
+        );
+      })}
+    </ListGroup>
+  );
+}
+
 export const SettingsSheet = () => {
   const { isOpen, close, activeTab } = useSettingsSheetStore();
-  const [foregroundColor, dangerColor] = useCSSVariable([
-    "--color-foreground",
-    "--color-danger",
-  ]);
   const setUserData = useUserStore((s) => s.setUserData);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -74,39 +162,6 @@ export const SettingsSheet = () => {
     router.replace("/(main)/onboarding");
   };
 
-  const MENU_ITEMS: MenuItem[] = [
-    {
-      icon: UsersThree,
-      label: "People",
-      description: "Contacts & relationships",
-      onPress: () => {
-        close();
-        router.push("/(main)/(tabs)/people" as never);
-      },
-    },
-    { icon: Crown, label: "Premium", description: "Trial & purchase" },
-    {
-      icon: Brain,
-      label: "Local AI",
-      description: "Model & inference",
-      onPress: () => {
-        close();
-        router.push("/home/ai-test" as never);
-      },
-    },
-    { icon: Bell, label: "Notifications", description: "Reminders & alerts" },
-    { icon: Gear, label: "Appearance", description: "Theme & display" },
-    { icon: Export, label: "Export Data", description: "CSV or JSON" },
-    {
-      icon: Trash,
-      label: "Delete Everything",
-      description: "Erase all data and restart",
-      danger: true,
-      onPress: () => setShowDeleteDialog(true),
-    },
-    { icon: Code, label: "View Source Code", description: "GitHub repository" },
-  ];
-
   if (!isOpen) return null;
 
   return (
@@ -114,111 +169,56 @@ export const SettingsSheet = () => {
       <Host style={{ position: "absolute", width: "100%", height: "100%" }}>
         <ModalBottomSheet onDismissRequest={close} showDragHandle>
           <RNHostView matchContents>
-            <ScrollView contentContainerClassName="gap-1 px-5 py-6 pb-10">
+            <ScrollView contentContainerClassName="px-5 py-6 pb-10">
               <AppText size="xl" weight="bold" family="headline">
                 Settings
               </AppText>
-              {activeTab === "money" && (
-                <View className="mt-4 gap-1.5">
-                  <AppText size="xs" color="primary" weight="bold" className="px-1">
-                    FINANCE
-                  </AppText>
-                  <View className="rounded-xl bg-surface">
-                    {FINANCE_ITEMS.map((item, index) => (
-                      <View key={item.label}>
-                        {index > 0 && <Separator />}
-                        <Pressable
-                          className="flex-row items-center gap-3 px-3 py-3.5"
-                          onPress={item.onPress}
-                        >
-                          <item.icon
-                            size={20}
-                            weight="regular"
-                            color={foregroundColor as string}
-                          />
-                          <View className="flex-1">
-                            <AppText size="base" weight="medium" color="foreground">
-                              {item.label}
-                            </AppText>
-                            <AppText size="xs" color="muted">
-                              {item.description}
-                            </AppText>
-                          </View>
-                        </Pressable>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
-              <View className="mt-3 rounded-xl bg-surface">
-                {MENU_ITEMS.map((item, index) => (
-                  <View key={item.label}>
-                    {index > 0 && <Separator />}
-                    <Pressable
-                      className="flex-row items-center gap-3 px-3 py-3.5"
-                      onPress={item.onPress}
-                    >
-                      <item.icon
-                        size={20}
-                        weight="regular"
-                        color={
-                          item.danger
-                            ? (dangerColor as string)
-                            : (foregroundColor as string)
-                        }
-                      />
-                      <View className="flex-1">
-                        <AppText
-                          size="base"
-                          weight="medium"
-                          color={item.danger ? "danger" : "foreground"}
-                        >
-                          {item.label}
-                        </AppText>
-                        <AppText size="xs" color="muted">
-                          {item.description}
-                        </AppText>
-                      </View>
-                    </Pressable>
-                  </View>
-                ))}
-              </View>
-              {activeTab !== "money" && (
-                <View className="mt-4 gap-1.5">
-                  <AppText size="xs" color="primary" weight="bold" className="px-1">
-                    FINANCE
-                  </AppText>
-                  <View className="rounded-xl bg-surface">
-                    {FINANCE_ITEMS.map((item, index) => (
-                      <View key={item.label}>
-                        {index > 0 && <Separator />}
-                        <Pressable
-                          className="flex-row items-center gap-3 px-3 py-3.5"
-                          onPress={item.onPress}
-                        >
-                          <item.icon
-                            size={20}
-                            weight="regular"
-                            color={foregroundColor as string}
-                          />
-                          <View className="flex-1">
-                            <AppText size="base" weight="medium" color="foreground">
-                              {item.label}
-                            </AppText>
-                            <AppText size="xs" color="muted">
-                              {item.description}
-                            </AppText>
-                          </View>
-                        </Pressable>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
 
-              {/* Version / Channel Surfing */}
-              <View className="mt-2">
-                <VersionTap />
+              <View className="mt-5 gap-4">
+                {/* Finance settings — top on money tab */}
+                {activeTab === "money" && (
+                  <View className="gap-1.5">
+                    <AppText size="xs" color="primary" weight="bold" className="px-1 uppercase tracking-wide">
+                      Finance
+                    </AppText>
+                    <SettingsListGroup items={FINANCE_ITEMS} close={close} />
+                  </View>
+                )}
+
+                {/* Main navigation group */}
+                <SettingsListGroup items={MAIN_ITEMS} close={close} />
+
+                {/* Settings group */}
+                <SettingsListGroup items={SETTINGS_ITEMS} close={close} />
+
+                {/* Finance settings — below main on other tabs */}
+                {activeTab !== "money" && (
+                  <View className="gap-1.5">
+                    <AppText size="xs" color="primary" weight="bold" className="px-1 uppercase tracking-wide">
+                      Finance
+                    </AppText>
+                    <SettingsListGroup items={FINANCE_ITEMS} close={close} />
+                  </View>
+                )}
+
+                {/* Danger zone */}
+                <SettingsListGroup
+                  items={[
+                    {
+                      icon: Trash,
+                      label: "Delete Everything",
+                      description: "Erase all data and restart",
+                      danger: true,
+                      onPress: () => setShowDeleteDialog(true),
+                    },
+                  ]}
+                  close={close}
+                />
+
+                {/* Version / Channel Surfing */}
+                <View className="mt-2">
+                  <VersionTap />
+                </View>
               </View>
             </ScrollView>
           </RNHostView>

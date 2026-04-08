@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, Pressable, ScrollView } from "react-native";
+import React, { useState } from "react";
+import { View, ScrollView } from "react-native";
 import {
   BottomSheet,
   Group,
@@ -21,16 +21,16 @@ import {
   Export,
   Trash,
   Code,
-  CaretRight,
   Tag,
   Wallet,
   Repeat,
   ChartLine,
 } from "phosphor-react-native";
-import { Dialog, Button } from "heroui-native";
+import { Dialog, Button, Separator, ListGroup } from "heroui-native";
 import { VersionTap } from "@/components/molecules/VersionTap";
 import { useCSSVariable } from "uniwind";
 import { useSettingsSheetStore } from "@/stores/useSettingsSheetStore";
+
 import { useUserStore } from "@/stores/useUserStore";
 import { useAIStore } from "@/stores/useAIStore";
 import type { ComponentType } from "react";
@@ -68,21 +68,82 @@ const SETTINGS_ITEMS: MenuItem[] = [
 ];
 
 const FINANCE_ITEMS: MenuItem[] = [
-  { icon: Tag, label: "Manage Categories", description: "Add, edit, or reorder" },
+  {
+    icon: Tag,
+    label: "Manage Categories",
+    description: "Add, edit, or reorder",
+    onPress: () => router.push("/(main)/manage-categories"),
+  },
   { icon: Wallet, label: "Budget Settings", description: "Monthly limits & alerts" },
   { icon: Repeat, label: "Recurring Bills", description: "Manage subscriptions" },
   { icon: ChartLine, label: "Finance Insight", description: "AI-powered analysis" },
 ];
 
+function SettingsListGroup({
+  items,
+  close,
+}: {
+  items: MenuItem[];
+  close: () => void;
+}) {
+  const [dangerColor, primaryColor] = useCSSVariable([
+    "--color-danger",
+    "--color-primary",
+  ]);
+
+  return (
+    <ListGroup>
+      {items.map((item, i) => {
+        const Icon = item.icon;
+        return (
+          <React.Fragment key={item.label}>
+            {i > 0 && <Separator className="mx-4" />}
+            <ListGroup.Item
+              onPress={() => {
+                if (item.onPress) {
+                  close();
+                  item.onPress();
+                }
+              }}
+            >
+              <ListGroup.ItemPrefix>
+                <View
+                  className={`h-9 w-9 items-center justify-center rounded-lg ${
+                    item.danger ? "bg-danger/15" : "bg-primary/10"
+                  }`}
+                >
+                  <Icon
+                    size={18}
+                    weight="fill"
+                    color={
+                      item.danger
+                        ? (dangerColor as string)
+                        : (primaryColor as string)
+                    }
+                  />
+                </View>
+              </ListGroup.ItemPrefix>
+              <ListGroup.ItemContent>
+                <ListGroup.ItemTitle
+                  className={item.danger ? "text-danger" : ""}
+                >
+                  {item.label}
+                </ListGroup.ItemTitle>
+                <ListGroup.ItemDescription>
+                  {item.description}
+                </ListGroup.ItemDescription>
+              </ListGroup.ItemContent>
+              {!item.danger && <ListGroup.ItemSuffix />}
+            </ListGroup.Item>
+          </React.Fragment>
+        );
+      })}
+    </ListGroup>
+  );
+}
+
 export const SettingsSheet = () => {
   const { isOpen, close, activeTab } = useSettingsSheetStore();
-  const [foregroundColor, dangerColor, primaryColor, mutedColor] =
-    useCSSVariable([
-      "--color-foreground",
-      "--color-danger",
-      "--color-primary",
-      "--color-muted",
-    ]);
   const setUserData = useUserStore((s) => s.setUserData);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -105,70 +166,6 @@ export const SettingsSheet = () => {
     useAIStore.getState().reset();
     router.replace("/(main)/onboarding");
   };
-
-  const renderRow = (
-    item: MenuItem,
-    isLast: boolean
-  ) => {
-    const { icon: Icon, label, description, danger, onPress } = item;
-    return (
-      <View key={label}>
-        <Pressable
-          className="flex-row items-center gap-3 px-3.5 py-3.5"
-          onPress={() => {
-            if (onPress) {
-              close();
-              onPress();
-            }
-          }}
-        >
-          <View
-            className={`h-9 w-9 items-center justify-center rounded-lg ${
-              danger ? "bg-danger/15" : "bg-primary/10"
-            }`}
-          >
-            <Icon
-              size={18}
-              weight="fill"
-              color={
-                danger
-                  ? (dangerColor as string)
-                  : (primaryColor as string)
-              }
-            />
-          </View>
-          <View className="flex-1">
-            <AppText
-              size="base"
-              weight="medium"
-              color={danger ? "danger" : "foreground"}
-            >
-              {label}
-            </AppText>
-            <AppText size="xs" color="muted">
-              {description}
-            </AppText>
-          </View>
-          {!danger && (
-            <CaretRight
-              size={14}
-              weight="bold"
-              color={mutedColor as string}
-            />
-          )}
-        </Pressable>
-        {!isLast && (
-          <View className="ml-14 h-px bg-default" />
-        )}
-      </View>
-    );
-  };
-
-  const renderGroup = (items: MenuItem[]) => (
-    <View className="overflow-hidden rounded-xl bg-surface">
-      {items.map((item, i) => renderRow(item, i === items.length - 1))}
-    </View>
-  );
 
   return (
     <>
@@ -198,15 +195,15 @@ export const SettingsSheet = () => {
                       <AppText size="xs" color="primary" weight="bold" className="px-1 uppercase tracking-wide">
                         Finance
                       </AppText>
-                      {renderGroup(FINANCE_ITEMS)}
+                      <SettingsListGroup items={FINANCE_ITEMS} close={close} />
                     </View>
                   )}
 
                   {/* Main navigation group */}
-                  {renderGroup(MAIN_ITEMS)}
+                  <SettingsListGroup items={MAIN_ITEMS} close={close} />
 
                   {/* Settings group */}
-                  {renderGroup(SETTINGS_ITEMS)}
+                  <SettingsListGroup items={SETTINGS_ITEMS} close={close} />
 
                   {/* Finance settings — below main on other tabs */}
                   {activeTab !== "money" && (
@@ -214,20 +211,23 @@ export const SettingsSheet = () => {
                       <AppText size="xs" color="primary" weight="bold" className="px-1 uppercase tracking-wide">
                         Finance
                       </AppText>
-                      {renderGroup(FINANCE_ITEMS)}
+                      <SettingsListGroup items={FINANCE_ITEMS} close={close} />
                     </View>
                   )}
 
                   {/* Danger zone */}
-                  {renderGroup([
-                    {
-                      icon: Trash,
-                      label: "Delete Everything",
-                      description: "Erase all data and restart",
-                      danger: true,
-                      onPress: () => setShowDeleteDialog(true),
-                    },
-                  ])}
+                  <SettingsListGroup
+                    items={[
+                      {
+                        icon: Trash,
+                        label: "Delete Everything",
+                        description: "Erase all data and restart",
+                        danger: true,
+                        onPress: () => setShowDeleteDialog(true),
+                      },
+                    ]}
+                    close={close}
+                  />
 
                   {/* Version / Channel Surfing */}
                   <View className="mt-2">

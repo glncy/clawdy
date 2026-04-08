@@ -11,7 +11,7 @@ export default function TabLayout() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View className="flex-1">
+      <View className="flex-1 bg-background">
         <Tabs
           tabBar={(props) => <CustomTabBar {...props} />}
           screenOptions={{ headerShown: false }}

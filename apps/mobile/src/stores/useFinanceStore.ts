@@ -114,6 +114,11 @@ interface FinanceState {
   ) => Promise<void>;
   deleteAccount: (db: Database, id: string) => Promise<void>;
   addTransaction: (db: Database, tx: Transaction) => Promise<void>;
+  updateTransaction: (
+    db: Database,
+    id: string,
+    updates: Partial<Omit<Transaction, "id">>
+  ) => Promise<void>;
   deleteTransaction: (db: Database, id: string) => Promise<void>;
   addRecurringBill: (db: Database, bill: RecurringBill) => Promise<void>;
   toggleBillPaid: (db: Database, id: string) => Promise<void>;
@@ -128,6 +133,14 @@ interface FinanceState {
     category: string,
     budgetAmount: number
   ) => Promise<void>;
+  addCategory: (db: Database, category: Category) => Promise<void>;
+  updateCategory: (
+    db: Database,
+    id: string,
+    updates: Partial<Pick<Category, "name" | "icon" | "sortOrder">>
+  ) => Promise<void>;
+  deleteCategory: (db: Database, id: string) => Promise<void>;
+  reorderCategories: (db: Database, orderedIds: string[]) => Promise<void>;
 }
 
 export const useFinanceStore = create<FinanceState>((set, get) => ({
@@ -220,6 +233,29 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     });
     set((state) => ({
       transactions: [tx, ...state.transactions],
+    }));
+  },
+
+  updateTransaction: async (db, id, updates) => {
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
+    if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+    if (updates.currency !== undefined) dbUpdates.currency = updates.currency;
+    if (updates.item !== undefined) dbUpdates.item = updates.item;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.date !== undefined) dbUpdates.date = updates.date;
+    if (updates.note !== undefined) dbUpdates.note = updates.note ?? null;
+    if (updates.accountId !== undefined) dbUpdates.accountId = updates.accountId ?? null;
+    dbUpdates.updatedAt = new Date().toISOString();
+
+    await db
+      .update(transactionsTable)
+      .set(dbUpdates)
+      .where(eq(transactionsTable.id, id));
+    set((state) => ({
+      transactions: state.transactions.map((t) =>
+        t.id === id ? { ...t, ...updates } : t
+      ),
     }));
   },
 
@@ -329,5 +365,60 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
         ],
       }));
     }
+  },
+
+  addCategory: async (db, category) => {
+    await db.insert(categoriesTable).values({
+      id: category.id,
+      name: category.name,
+      icon: category.icon,
+      isDefault: category.isDefault ? 1 : 0,
+      sortOrder: category.sortOrder,
+    });
+    set((state) => ({ categories: [...state.categories, category] }));
+  },
+
+  updateCategory: async (db, id, updates) => {
+    const dbUpdates: Partial<typeof categoriesTable.$inferInsert> = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
+    if (updates.sortOrder !== undefined) dbUpdates.sortOrder = updates.sortOrder;
+    await db
+      .update(categoriesTable)
+      .set(dbUpdates)
+      .where(eq(categoriesTable.id, id));
+    set((state) => ({
+      categories: state.categories.map((c) =>
+        c.id === id ? { ...c, ...updates } : c
+      ),
+    }));
+  },
+
+  deleteCategory: async (db, id) => {
+    const { categories } = get();
+    const category = categories.find((c) => c.id === id);
+    if (category?.isDefault) return;
+    await db.delete(categoriesTable).where(eq(categoriesTable.id, id));
+    set((state) => ({
+      categories: state.categories.filter((c) => c.id !== id),
+    }));
+  },
+
+  reorderCategories: async (db, orderedIds) => {
+    const updates = orderedIds.map((id, index) =>
+      db
+        .update(categoriesTable)
+        .set({ sortOrder: index })
+        .where(eq(categoriesTable.id, id))
+    );
+    await Promise.all(updates);
+    set((state) => ({
+      categories: state.categories
+        .map((c) => {
+          const newOrder = orderedIds.indexOf(c.id);
+          return newOrder >= 0 ? { ...c, sortOrder: newOrder } : c;
+        })
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    }));
   },
 }));

@@ -1,12 +1,19 @@
-import { View, Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 import { router } from "expo-router";
 import { TransactionRow } from "@/components/molecules/TransactionRow";
 import { AppText } from "@/components/atoms/Text";
+import { useAddTransactionSheetStore } from "@/stores/useAddTransactionSheetStore";
 import type { Transaction } from "@/types";
+
+function openEditTransaction(tx: Transaction) {
+  useAddTransactionSheetStore.getState().setEdit(tx);
+  router.push("/(main)/add-transaction");
+}
 
 interface TransactionListProps {
   transactions: Transaction[];
   limit?: number;
+  onAdd?: () => void;
 }
 
 export function getDateLabel(dateStr: string): string {
@@ -46,7 +53,7 @@ export function groupByDate(
     }));
 }
 
-export const TransactionList = ({ transactions, limit }: TransactionListProps) => {
+export const TransactionList = ({ transactions, limit, onAdd }: TransactionListProps) => {
   const displayed = limit ? transactions.slice(0, limit) : transactions;
   const grouped = groupByDate(displayed);
   const hasMore = limit !== undefined && transactions.length > limit;
@@ -76,6 +83,13 @@ export const TransactionList = ({ transactions, limit }: TransactionListProps) =
           <AppText size="xs" color="muted" align="center">
             Tap the + button to log your first income or expense.
           </AppText>
+          {onAdd && (
+            <Pressable onPress={onAdd} className="mt-1">
+              <AppText size="xs" color="primary" weight="semibold">
+                + Add Transaction
+              </AppText>
+            </Pressable>
+          )}
         </View>
       ) : (
         grouped.map((group) => (
@@ -84,7 +98,11 @@ export const TransactionList = ({ transactions, limit }: TransactionListProps) =
               {group.label}
             </AppText>
             {group.items.map((tx) => (
-              <TransactionRow key={tx.id} transaction={tx} />
+              <TransactionRow
+                key={tx.id}
+                transaction={tx}
+                onPress={() => openEditTransaction(tx)}
+              />
             ))}
           </View>
         ))

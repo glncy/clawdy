@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { View, TextInput, Pressable } from "react-native";
-import { Card } from "heroui-native";
+import { View, Pressable } from "react-native";
+import { Card, Input } from "heroui-native";
 import { AppText } from "@/components/atoms/Text";
 import { MagnifyingGlass, PaperPlaneRight, Check, X } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
@@ -84,15 +84,14 @@ export const SmartExpenseInput = () => {
             weight="regular"
             color={mutedColor as string}
           />
-          <TextInput
-            className="flex-1 text-sm text-foreground"
+          <Input
+            className="flex-1 text-sm"
             placeholder="coffee 4.50, groceries 32..."
-            placeholderTextColor={mutedColor as string}
             value={text}
             onChangeText={setText}
             onSubmitEditing={handleSubmit}
             returnKeyType="send"
-            editable={!isParsing}
+            isDisabled={isParsing}
           />
           <Pressable onPress={handleSubmit} hitSlop={8} disabled={isParsing}>
             <PaperPlaneRight

@@ -1,10 +1,11 @@
-import { ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { AppText } from "@/components/atoms/Text";
 import { useCurrency } from "@/hooks/useCurrency";
 import type { Account } from "@/types";
 
 interface AccountsSectionProps {
   accounts: Account[];
+  onAdd?: () => void;
 }
 
 const TYPE_LABELS: Record<Account["type"], string> = {
@@ -15,7 +16,7 @@ const TYPE_LABELS: Record<Account["type"], string> = {
   investment: "Investment",
 };
 
-export const AccountsSection = ({ accounts }: AccountsSectionProps) => {
+export const AccountsSection = ({ accounts, onAdd }: AccountsSectionProps) => {
   const { format } = useCurrency();
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
 
@@ -39,6 +40,13 @@ export const AccountsSection = ({ accounts }: AccountsSectionProps) => {
           <AppText size="xs" color="muted" align="center">
             Add a checking, savings, or credit account to track your balances.
           </AppText>
+          {onAdd && (
+            <Pressable onPress={onAdd} className="mt-1">
+              <AppText size="xs" color="primary" weight="semibold">
+                + Add Account
+              </AppText>
+            </Pressable>
+          )}
         </View>
       ) : (
         <ScrollView

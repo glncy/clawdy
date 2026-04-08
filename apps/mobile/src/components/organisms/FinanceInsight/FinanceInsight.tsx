@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { Card } from "heroui-native";
+import { Card, Skeleton } from "heroui-native";
 import { AppText } from "@/components/atoms/Text";
 import { Lightning } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
@@ -65,8 +65,8 @@ export const FinanceInsight = () => {
               clawdi Finance Insight
             </AppText>
           </View>
-          <View className="h-3 w-3/4 rounded bg-default" />
-          <View className="h-3 w-1/2 rounded bg-default" />
+          <Skeleton className="h-3 w-3/4 rounded" />
+          <Skeleton className="h-3 w-1/2 rounded" />
         </Card.Body>
       </Card>
     );
@@ -101,7 +101,7 @@ export const FinanceInsight = () => {
             clawdi Finance Insight
           </AppText>
         </View>
-        <View className="h-3 w-2/3 rounded bg-default" />
+        <Skeleton className="h-3 w-2/3 rounded" />
       </Card.Body>
     </Card>
   );

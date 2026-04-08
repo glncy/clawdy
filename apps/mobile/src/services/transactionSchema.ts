@@ -8,16 +8,8 @@ export const transactionSchema = z.object({
   amount: z.number().describe("The numeric amount"),
   currency: z.string().describe("Currency code, default USD").default("USD"),
   category: z
-    .enum([
-      "Food",
-      "Transport",
-      "Shopping",
-      "Bills",
-      "Health",
-      "Entertainment",
-      "Groceries",
-      "Other",
-    ])
+    .string()
+    .min(1)
     .describe("Spending or income category"),
 });
 

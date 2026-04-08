@@ -12,8 +12,15 @@ import { RecurringBillsSection } from "@/components/organisms/RecurringBillsSect
 import { SavingsGoalsSection } from "@/components/organisms/SavingsGoalsSection";
 import { FinanceInsight } from "@/components/organisms/FinanceInsight";
 import { AddTransactionSheet } from "@/components/organisms/AddTransactionSheet";
+import { AddAccountSheet } from "@/components/organisms/AddAccountSheet";
+import { AddBillSheet } from "@/components/organisms/AddBillSheet";
+import { AddGoalSheet } from "@/components/organisms/AddGoalSheet";
 import { useFinanceData } from "@/hooks/useFinanceData";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useAddTransactionSheetStore } from "@/stores/useAddTransactionSheetStore";
+import { useAddAccountSheetStore } from "@/stores/useAddAccountSheetStore";
+import { useAddBillSheetStore } from "@/stores/useAddBillSheetStore";
+import { useAddGoalSheetStore } from "@/stores/useAddGoalSheetStore";
 
 export default function MoneyScreen() {
   const {
@@ -71,6 +78,9 @@ export default function MoneyScreen() {
           </Card.Body>
         </Card>
 
+        {/* Finance Insight */}
+        <FinanceInsight />
+
         {/* Spending Trend — This Week */}
         <SpendingTrend data={thisWeekSpending} dailyBudget={dailyBudget} />
 
@@ -79,7 +89,10 @@ export default function MoneyScreen() {
         <BudgetShieldBanner overAmount={overBudget} />
 
         {/* Accounts */}
-        <AccountsSection accounts={accounts} />
+        <AccountsSection
+          accounts={accounts}
+          onAdd={() => useAddAccountSheetStore.getState().open()}
+        />
 
         {/* Category Spending */}
         {categoryBudgets.length > 0 && (
@@ -87,19 +100,30 @@ export default function MoneyScreen() {
         )}
 
         {/* Recurring Bills */}
-        <RecurringBillsSection bills={recurringBills} />
+        <RecurringBillsSection
+          bills={recurringBills}
+          onAdd={() => useAddBillSheetStore.getState().open()}
+        />
 
         {/* Transactions */}
-        <TransactionList transactions={transactions} limit={5} />
+        <TransactionList
+          transactions={transactions}
+          limit={5}
+          onAdd={() => useAddTransactionSheetStore.getState().open()}
+        />
 
         {/* Savings Goals */}
-        <SavingsGoalsSection goals={savingsGoals} />
+        <SavingsGoalsSection
+          goals={savingsGoals}
+          onAdd={() => useAddGoalSheetStore.getState().open()}
+        />
 
-        {/* Finance Insight */}
-        <FinanceInsight />
       </ScrollView>
 
       <AddTransactionSheet />
+      <AddAccountSheet />
+      <AddBillSheet />
+      <AddGoalSheet />
     </>
   );
 }

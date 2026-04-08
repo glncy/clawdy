@@ -1,4 +1,5 @@
 import { View } from "react-native";
+import { Separator } from "heroui-native";
 import { AppText } from "@/components/atoms/Text";
 import { getCategoryIcon } from "@/utils/categoryIcon";
 import { CheckCircle } from "phosphor-react-native";
@@ -74,7 +75,7 @@ export const RecurringBillRow = ({ bill, isLast }: RecurringBillRowProps) => {
           )}
         </View>
       </View>
-      {!isLast && <View className="ml-14 h-px bg-default" />}
+      {!isLast && <Separator className="ml-14" />}
     </View>
   );
 };

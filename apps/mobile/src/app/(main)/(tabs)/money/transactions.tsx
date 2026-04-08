@@ -1,13 +1,20 @@
 import { ScrollView, View } from "react-native";
-import { Stack } from "expo-router";
+import { Separator } from "heroui-native";
+import { Stack, router } from "expo-router";
 import { AppText } from "@/components/atoms/Text";
 import { TransactionRow } from "@/components/molecules/TransactionRow";
 import { groupByDate } from "@/components/organisms/TransactionList/TransactionList";
 import { useFinanceData } from "@/hooks/useFinanceData";
+import { useAddTransactionSheetStore } from "@/stores/useAddTransactionSheetStore";
 
 export default function TransactionsScreen() {
   const { transactions } = useFinanceData();
   const grouped = groupByDate(transactions);
+
+  const handleEdit = (tx: (typeof transactions)[0]) => {
+    useAddTransactionSheetStore.getState().setEdit(tx);
+    router.push("/(main)/add-transaction");
+  };
 
   return (
     <>
@@ -25,9 +32,12 @@ export default function TransactionsScreen() {
             <View className="overflow-hidden rounded-xl bg-surface">
               {group.items.map((tx, i) => (
                 <View key={tx.id}>
-                  <TransactionRow transaction={tx} />
+                  <TransactionRow
+                    transaction={tx}
+                    onPress={() => handleEdit(tx)}
+                  />
                   {i < group.items.length - 1 && (
-                    <View className="ml-14 h-px bg-default" />
+                    <Separator className="ml-14" />
                   )}
                 </View>
               ))}

@@ -131,6 +131,10 @@ export function useFinanceData() {
       db ? store.deleteAccount(db, id) : Promise.resolve(),
     addTransaction: (tx: Parameters<typeof store.addTransaction>[1]) =>
       db ? store.addTransaction(db, tx) : Promise.resolve(),
+    updateTransaction: (
+      id: string,
+      updates: Parameters<typeof store.updateTransaction>[2]
+    ) => (db ? store.updateTransaction(db, id, updates) : Promise.resolve()),
     deleteTransaction: (id: string) =>
       db ? store.deleteTransaction(db, id) : Promise.resolve(),
     addRecurringBill: (bill: Parameters<typeof store.addRecurringBill>[1]) =>
@@ -145,5 +149,15 @@ export function useFinanceData() {
     ) => (db ? store.updateSavingsGoal(db, id, updates) : Promise.resolve()),
     setBudget: (category: string, budgetAmount: number) =>
       db ? store.setBudget(db, category, budgetAmount) : Promise.resolve(),
+    addCategory: (category: Parameters<typeof store.addCategory>[1]) =>
+      db ? store.addCategory(db, category) : Promise.resolve(),
+    updateCategory: (
+      id: string,
+      updates: Parameters<typeof store.updateCategory>[2]
+    ) => (db ? store.updateCategory(db, id, updates) : Promise.resolve()),
+    deleteCategory: (id: string) =>
+      db ? store.deleteCategory(db, id) : Promise.resolve(),
+    reorderCategories: (orderedIds: string[]) =>
+      db ? store.reorderCategories(db, orderedIds) : Promise.resolve(),
   };
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { View } from "react-native";
-import { Card } from "heroui-native";
+import { Card, Skeleton } from "heroui-native";
 import { AppText } from "@/components/atoms/Text";
 import { Lightning } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
@@ -159,8 +159,8 @@ export const DailyBriefing = ({
               clawdi is thinking...
             </AppText>
           </View>
-          <View className="h-3 w-3/4 rounded bg-default animate-pulse" />
-          <View className="h-3 w-1/2 rounded bg-default animate-pulse" />
+          <Skeleton className="h-3 w-3/4 rounded" />
+          <Skeleton className="h-3 w-1/2 rounded" />
         </Card.Body>
       </Card>
     );
@@ -203,7 +203,7 @@ export const DailyBriefing = ({
             clawdi AI is getting ready...
           </AppText>
         </View>
-        <View className="h-3 w-2/3 rounded bg-default animate-pulse" />
+        <Skeleton className="h-3 w-2/3 rounded" />
       </Card.Body>
     </Card>
   );

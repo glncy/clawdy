@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { View, Pressable } from "react-native";
 import { AppText } from "@/components/atoms/Text";
 import { getCategoryIcon } from "@/utils/categoryIcon";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -6,14 +6,15 @@ import type { Transaction } from "@/types";
 
 interface TransactionRowProps {
   transaction: Transaction;
+  onPress?: () => void;
 }
 
-export const TransactionRow = ({ transaction }: TransactionRowProps) => {
+export const TransactionRow = ({ transaction, onPress }: TransactionRowProps) => {
   const { format } = useCurrency();
   const isExpense = transaction.type === "expense";
 
   return (
-    <View className="flex-row items-center gap-3 rounded-xl bg-surface p-3">
+    <Pressable onPress={onPress} className="flex-row items-center gap-3 rounded-xl bg-surface p-3">
       <View className="h-9 w-9 items-center justify-center rounded-lg bg-default">
         <AppText size="base">{getCategoryIcon(transaction.category)}</AppText>
       </View>
@@ -35,6 +36,6 @@ export const TransactionRow = ({ transaction }: TransactionRowProps) => {
         {isExpense ? "-" : "+"}
         {format(transaction.amount)}
       </AppText>
-    </View>
+    </Pressable>
   );
 };

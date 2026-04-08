@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { AppText } from "@/components/atoms/Text";
 import { SavingsGoalCard } from "@/components/molecules/SavingsGoalCard";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -6,9 +6,10 @@ import type { SavingsGoal } from "@/types";
 
 interface SavingsGoalsSectionProps {
   goals: SavingsGoal[];
+  onAdd?: () => void;
 }
 
-export const SavingsGoalsSection = ({ goals }: SavingsGoalsSectionProps) => {
+export const SavingsGoalsSection = ({ goals, onAdd }: SavingsGoalsSectionProps) => {
   const { format } = useCurrency();
   const totalSaved = goals.reduce((sum, g) => sum + g.currentAmount, 0);
   const totalTarget = goals.reduce((sum, g) => sum + g.targetAmount, 0);
@@ -33,6 +34,13 @@ export const SavingsGoalsSection = ({ goals }: SavingsGoalsSectionProps) => {
           <AppText size="xs" color="muted" align="center">
             Set a goal to start tracking your progress toward something meaningful.
           </AppText>
+          {onAdd && (
+            <Pressable onPress={onAdd} className="mt-1">
+              <AppText size="xs" color="primary" weight="semibold">
+                + Add Goal
+              </AppText>
+            </Pressable>
+          )}
         </View>
       ) : (
         <View className="gap-3">
