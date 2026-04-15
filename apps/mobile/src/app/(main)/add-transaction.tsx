@@ -441,7 +441,7 @@ export default function AddTransactionScreen() {
           <Dialog.Content>
             <Dialog.Title>Delete Transaction?</Dialog.Title>
             <Dialog.Description>
-              "{editingTransaction?.item}" will be permanently removed.
+              &quot;{editingTransaction?.item}&quot; will be permanently removed.
             </Dialog.Description>
             <View className="flex-row gap-3 mt-4">
               <Button

@@ -213,8 +213,8 @@ export default function ManageCategoriesScreen() {
           <Dialog.Content>
             <Dialog.Title>Delete Category?</Dialog.Title>
             <Dialog.Description>
-              "{deletingCategory?.name}" will be removed. Existing transactions
-              using this category won't be affected.
+              &quot;{deletingCategory?.name}&quot; will be removed. Existing transactions
+              using this category won&apos;t be affected.
             </Dialog.Description>
             <View className="flex-row gap-3 mt-4">
               <Button
