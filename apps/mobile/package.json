@@ -17,6 +17,7 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.63",
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo-google-fonts/literata": "^0.4.3",
     "@expo-google-fonts/poppins": "^0.4.1",

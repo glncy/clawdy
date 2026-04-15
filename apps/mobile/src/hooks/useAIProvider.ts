@@ -1,7 +1,21 @@
 import { Platform } from "react-native";
 import { useEffect, useState } from "react";
 
-export type AIProvider = "apple" | "gemma";
+export type AIProvider = "apple" | "gemma" | "gemini";
+
+// TODO: Cloud AI (Gemini) — add Gemini 2.0 Flash as fallback for devices
+// without enough RAM for Gemma 4 E2B (< 5.5 GB), or as a user preference.
+// Implementation plan:
+//   1. Install expo-secure-store to persist the Gemini API key
+//   2. Add "Cloud AI" section to Settings > AI with API key input
+//   3. Extend useAIProvider to check user's cloud preference + API key
+//   4. Create useGeminiAI hook using @ai-sdk/google (already installed)
+//   5. Update useAI to route "gemini" provider to useGeminiAI
+// Notes:
+//   - @ai-sdk/google is already installed
+//   - Gemini 2.0 Flash is free tier, supports full tool calling
+//   - API key obtained from aistudio.google.com
+//   - Show privacy notice: queries sent to Google servers
 
 /**
  * Checks if Apple Foundation Models are available on this device.
