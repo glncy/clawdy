@@ -1,11 +1,11 @@
 /**
  * Unified AI hook — routes inference to the correct provider:
  *   - "apple"  → Apple Foundation Models (iOS 26+, Apple Intelligence)
- *   - "gemma"  → Gemma 4 E2B via llama.cpp (all other devices)
+ *   - "gemma"  → Gemma 4 E2B via llama.cpp (6+ GB RAM devices)
+ *   - "gemini" → Gemini 3 Flash cloud API (fallback / user preference)
  *
- * Both providers expose the same interface so callers are provider-agnostic.
- * Apple Foundation Models support requires @react-native-ai/apple to be
- * installed. Until then, the hook always resolves to the Gemma provider.
+ * All providers expose the same interface so callers are provider-agnostic.
+ * Currently always resolves to "gemma" until other providers are wired up.
  */
 
 import { useAIProvider } from "./useAIProvider";

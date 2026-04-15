@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 export type AIProvider = "apple" | "gemma" | "gemini";
 
-// TODO: Cloud AI (Gemini) — add Gemini 2.0 Flash as fallback for devices
+// TODO: Cloud AI (Gemini) — add Gemini 3 Flash as fallback for devices
 // without enough RAM for Gemma 4 E2B (< 5.5 GB), or as a user preference.
 // Implementation plan:
 //   1. Install expo-secure-store to persist the Gemini API key
@@ -13,7 +13,7 @@ export type AIProvider = "apple" | "gemma" | "gemini";
 //   5. Update useAI to route "gemini" provider to useGeminiAI
 // Notes:
 //   - @ai-sdk/google is already installed
-//   - Gemini 2.0 Flash is free tier, supports full tool calling
+//   - Model: "gemini-3.0-flash" — free tier, supports full tool calling
 //   - API key obtained from aistudio.google.com
 //   - Show privacy notice: queries sent to Google servers
 
