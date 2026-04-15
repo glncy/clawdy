@@ -7,14 +7,14 @@
 
 ## 1. Vision
 
-Clawdi's local AI (Qwen 2.5 1.5B) should feel less like a feature and more like the intelligence woven through the entire app. After the tabs completion sprint, every pillar has real data. This sprint activates that data as a unified AI brain.
+Clawdi's local AI (Qwen 3.5 2B) should feel less like a feature and more like the intelligence woven through the entire app. After the tabs completion sprint, every pillar has real data. This sprint activates that data as a unified AI brain.
 
 **Three AI experiences, layered:**
 - **Chat** — on-demand Q&A with your whole life as context ("How much did I spend on food when I was stressed last month?")
 - **Proactive Nudges** — AI surfaces the right insight at the right moment, without being asked
 - **Periodic Reports** — rich weekly/monthly narrative summaries generated locally
 
-**Not in scope:** cloud sync, external APIs, model upgrades (stays on Qwen 2.5 1.5B).
+**Not in scope:** cloud sync, external APIs, further model upgrades beyond Qwen 3.5 2B.
 
 ---
 
@@ -435,7 +435,7 @@ Built on top of `LifeContext.money`. All are additive to existing Money tab:
 
 ## 8. Model Constraints & Prompt Engineering
 
-**Model:** Qwen 2.5 1.5B Instruct Q4_K_M (~900MB)  
+**Model:** Qwen 3.5 2B Q4_K_M (~1.4GB)  
 **Context window:** ~2048 tokens  
 **GPU layers:** 99 (full GPU acceleration)
 
@@ -452,7 +452,7 @@ Built on top of `LifeContext.money`. All are additive to existing Money tab:
 ## 9. Out of Scope
 
 - Cloud-based AI models or API calls (local only, always)
-- Model upgrades (stays on Qwen 2.5 1.5B)
+- Model upgrades (stays on Qwen 3.5 2B)
 - Social features / sharing AI insights
 - Onboarding AI personalization
 - Predictive ML models (all inference via LLM prompts)
