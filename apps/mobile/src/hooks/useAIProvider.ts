@@ -31,8 +31,15 @@ export function useAIProvider(): { provider: AIProvider; isChecking: boolean } {
     }
     // Dynamic import keeps Android from loading the iOS-only TurboModule
     import("@react-native-ai/apple")
-      .then(({ apple }) => setIsAppleAvailable(apple.isAvailable()))
-      .catch(() => setIsAppleAvailable(false))
+      .then(({ apple }) => {
+        const available = apple.isAvailable();
+        console.debug("[useAIProvider] apple.isAvailable():", available);
+        setIsAppleAvailable(available);
+      })
+      .catch((err) => {
+        console.debug("[useAIProvider] apple import failed:", err?.message ?? err);
+        setIsAppleAvailable(false);
+      })
       .finally(() => setIsChecking(false));
   }, []);
 
@@ -44,6 +51,12 @@ export function useAIProvider(): { provider: AIProvider; isChecking: boolean } {
       provider = "gemini";
     }
     // all other cases → "gemma"
+    console.debug("[useAIProvider] resolved:", {
+      preferredProvider,
+      isAppleAvailable,
+      hasGeminiKey: !!geminiApiKey,
+      provider,
+    });
   }
 
   return { provider, isChecking };

@@ -1,10 +1,10 @@
 // apps/mobile/src/app/(main)/(tabs)/settings/ai.tsx
 import { useState } from "react";
-import { View, ScrollView, Platform, TextInput } from "react-native";
+import { View, ScrollView, Platform, TextInput, Pressable } from "react-native";
 import { Stack } from "expo-router";
 import { Button } from "heroui-native";
 import { AppText } from "@/components/atoms/Text";
-import { Brain, Cloud, DeviceMobile, CheckCircle } from "phosphor-react-native";
+import { Brain, Cloud, DeviceMobile, CheckCircle, Warning } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
 import { useAIProvider } from "@/hooks/useAIProvider";
 import {
@@ -58,8 +58,13 @@ export default function AISettingsScreen() {
   const [apiKeyInput, setApiKeyInput] = useState(geminiApiKey ?? "");
   const [apiKeyDirty, setApiKeyDirty] = useState(false);
 
-  // Which providers are available to show
+  // Apple AI row: iOS only, always shown; badge shows if unavailable on device
   const showApple = Platform.OS === "ios";
+  // apple.isAvailable() result is reflected via activeProvider —
+  // if preferred is "apple" but active resolves to "gemma", Apple is unavailable.
+  const appleUnavailable =
+    preferredProvider === "apple" && !isChecking && activeProvider !== "apple";
+
   const options: AIPreference[] = [
     ...(showApple ? (["apple"] as AIPreference[]) : []),
     "gemma",
@@ -113,15 +118,15 @@ export default function AISettingsScreen() {
                   : option === "gemini"
                   ? Cloud
                   : Brain;
+              const isAppleRow = option === "apple";
 
               return (
                 <View key={option}>
-                  <Button
-                    variant="ghost"
-                    className="h-auto items-start px-4 py-3.5"
+                  <Pressable
                     onPress={() => setPreferredProvider(option)}
+                    className="px-4 py-3.5 active:opacity-60"
                   >
-                    <View className="flex-row items-center gap-3 w-full">
+                    <View className="flex-row items-center gap-3">
                       <View
                         className={`h-9 w-9 items-center justify-center rounded-lg ${
                           isSelected ? "bg-primary/10" : "bg-default/50"
@@ -148,16 +153,28 @@ export default function AISettingsScreen() {
                         <AppText size="xs" color="muted">
                           {PROVIDER_DESCRIPTIONS[option]}
                         </AppText>
+                        {isAppleRow && appleUnavailable && (
+                          <AppText size="xs" color="warning" className="mt-0.5">
+                            Not available — requires iOS 26+ with Apple Intelligence enabled
+                          </AppText>
+                        )}
                       </View>
-                      {isSelected && (
+                      {isSelected && !appleUnavailable && (
                         <CheckCircle
                           size={18}
                           weight="fill"
                           color={primaryColor as string}
                         />
                       )}
+                      {isAppleRow && appleUnavailable && (
+                        <Warning
+                          size={18}
+                          weight="fill"
+                          color={mutedColor as string}
+                        />
+                      )}
                     </View>
-                  </Button>
+                  </Pressable>
                   {!isLast && <View className="ml-14 h-px bg-default" />}
                 </View>
               );
