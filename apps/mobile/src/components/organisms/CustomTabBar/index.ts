@@ -1,1 +1,1 @@
-export { CustomTabBar } from "./CustomTabBar";
+export { AppTabBar } from "./AppTabBar";

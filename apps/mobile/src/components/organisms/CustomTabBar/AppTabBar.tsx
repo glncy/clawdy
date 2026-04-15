@@ -1,18 +1,11 @@
 import { View, Pressable } from "react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import {
-  House,
-  CurrencyDollar,
-  Sun,
-  Leaf,
-  Plus,
-} from "phosphor-react-native";
+import { House, CurrencyDollar, Sun, Leaf } from "phosphor-react-native";
 import type { ComponentType } from "react";
 import type { IconProps } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "@/components/atoms/Text";
-import { useQuickActionStore } from "@/stores/useQuickActionStore";
 
 const TAB_CONFIG: Record<
   string,
@@ -24,25 +17,22 @@ const TAB_CONFIG: Record<
   life: { label: "Life", icon: Leaf },
 };
 
-// Tab order: Home, Money, [+], Day, Life
-const LEFT_TABS = ["home", "money"];
-const RIGHT_TABS = ["day", "life"];
+const ALL_TABS = ["home", "money", "day", "life"];
 
 /**
- * Custom Tab Bar with center add button between Money and Day
+ * Floating pill-shaped tab bar (iOS <26 and Android).
+ * The "+" FAB is rendered separately in _layout.tsx as AppTabBarFAB.
  * @level Organism
  */
-export function CustomTabBar({
+export function AppTabBar({
   state,
   descriptors,
   navigation,
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const toggleQuickAction = useQuickActionStore((s) => s.toggle);
-  const [primaryColor, mutedColor, primaryForegroundColor] = useCSSVariable([
+  const [primaryColor, mutedColor] = useCSSVariable([
     "--color-primary",
     "--color-muted",
-    "--color-primary-foreground",
   ]);
 
   const renderTab = (routeName: string) => {
@@ -75,10 +65,6 @@ export function CustomTabBar({
       });
     };
 
-    const iconColor = isFocused
-      ? (primaryColor as string)
-      : (mutedColor as string);
-
     return (
       <Pressable
         key={route.key}
@@ -87,12 +73,12 @@ export function CustomTabBar({
         accessibilityLabel={options.tabBarAccessibilityLabel ?? config.label}
         onPress={onPress}
         onLongPress={onLongPress}
-        className="flex-1 items-center gap-0.5 py-1.5"
+        className="flex-1 items-center gap-0.5 py-3"
       >
         <Icon
           size={22}
           weight={isFocused ? "fill" : "regular"}
-          color={iconColor}
+          color={isFocused ? (primaryColor as string) : (mutedColor as string)}
         />
         <AppText
           size="xs"
@@ -108,30 +94,12 @@ export function CustomTabBar({
 
   return (
     <View
-      className="absolute bottom-0 left-0 right-0 border-t border-default bg-surface"
+      pointerEvents="box-none"
+      className="absolute bottom-0 left-0 right-0"
       style={{ paddingBottom: insets.bottom }}
     >
-      <View className="flex-row items-end px-1 pt-1">
-        {/* Left tabs: Home, Money */}
-        {LEFT_TABS.map(renderTab)}
-
-        {/* Center + button */}
-        <View className="flex-1 items-center pb-3">
-          <Pressable
-            className="h-12 w-12 items-center justify-center rounded-full bg-primary shadow-md"
-            style={{ marginTop: -24, borderCurve: "continuous" }}
-            onPress={toggleQuickAction}
-          >
-            <Plus
-              size={22}
-              weight="bold"
-              color={primaryForegroundColor as string}
-            />
-          </Pressable>
-        </View>
-
-        {/* Right tabs: Day, Life */}
-        {RIGHT_TABS.map(renderTab)}
+      <View className="mx-4 mb-3 flex-row overflow-hidden rounded-full bg-surface shadow-xl">
+        {ALL_TABS.map(renderTab)}
       </View>
     </View>
   );
