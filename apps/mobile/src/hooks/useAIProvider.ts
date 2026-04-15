@@ -3,7 +3,6 @@ import { Platform } from "react-native";
 import { useEffect, useState } from "react";
 import {
   useAIPreferenceStore,
-  type AIPreference,
 } from "@/stores/useAIPreferenceStore";
 
 export type AIProvider = "apple" | "gemma" | "gemini";
@@ -33,15 +32,26 @@ export function useAIProvider(): { provider: AIProvider; isChecking: boolean } {
     import("@react-native-ai/apple")
       .then(({ apple }) => {
         const available = apple.isAvailable();
-        console.debug("[useAIProvider] apple.isAvailable():", available);
         setIsAppleAvailable(available);
+        console.debug("[useAIProvider] resolved:", {
+          preferredProvider,
+          isAppleAvailable: available,
+          hasGeminiKey: !!geminiApiKey,
+          provider:
+            preferredProvider === "apple" && available
+              ? "apple"
+              : preferredProvider === "gemini" && !!geminiApiKey
+              ? "gemini"
+              : "gemma",
+        });
       })
-      .catch((err) => {
-        console.debug("[useAIProvider] apple import failed:", err?.message ?? err);
+      .catch(() => {
         setIsAppleAvailable(false);
       })
       .finally(() => setIsChecking(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // intentionally run once on mount — provider preference changes are handled
+  // by re-rendering the computed `provider` value below
 
   let provider: AIProvider = "gemma";
   if (!isChecking) {
@@ -50,13 +60,6 @@ export function useAIProvider(): { provider: AIProvider; isChecking: boolean } {
     } else if (preferredProvider === "gemini" && !!geminiApiKey) {
       provider = "gemini";
     }
-    // all other cases → "gemma"
-    console.debug("[useAIProvider] resolved:", {
-      preferredProvider,
-      isAppleAvailable,
-      hasGeminiKey: !!geminiApiKey,
-      provider,
-    });
   }
 
   return { provider, isChecking };
