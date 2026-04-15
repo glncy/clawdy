@@ -21,6 +21,74 @@ import {
  */
 let sharedModel: LlamaLanguageModel | null = null;
 
+/**
+ * Stream filter that strips thinking blocks from text chunks.
+ * Gemma 4 always emits thinking tokens in the raw text stream as large
+ * chunks (not single tokens), so the ai-sdk.js switch statement never
+ * catches them. We filter here instead.
+ *
+ * Handles: <|channel>...</channel|> (Gemma 4), <think>...</think> (DeepSeek)
+ */
+function makeThinkingFilter() {
+  const STARTS = ["<|channel>", "<think>"] as const;
+  const ENDS: Record<string, string> = {
+    "<|channel>": "<channel|>",
+    "<think>": "</think>",
+  };
+  const MAX_LOOKAHEAD = Math.max(...STARTS.map((s) => s.length)) - 1;
+
+  let buf = "";
+  let activeEnd: string | null = null; // which end-marker are we looking for
+
+  return function filter(chunk: string): string {
+    buf += chunk;
+    let out = "";
+
+    while (buf.length > 0) {
+      if (activeEnd) {
+        // Inside a thinking block — scan for the end marker
+        const idx = buf.indexOf(activeEnd);
+        if (idx !== -1) {
+          buf = buf.slice(idx + activeEnd.length);
+          activeEnd = null;
+        } else {
+          // Keep last N chars in buffer in case the end marker is split
+          const safe = buf.length - activeEnd.length + 1;
+          if (safe > 0) buf = buf.slice(safe);
+          break;
+        }
+      } else {
+        // Outside a thinking block — find the earliest start marker
+        let earliest = -1;
+        let earliestStart = "";
+        for (const start of STARTS) {
+          const idx = buf.indexOf(start);
+          if (idx !== -1 && (earliest === -1 || idx < earliest)) {
+            earliest = idx;
+            earliestStart = start;
+          }
+        }
+
+        if (earliest !== -1) {
+          out += buf.slice(0, earliest);
+          buf = buf.slice(earliest + earliestStart.length);
+          activeEnd = ENDS[earliestStart];
+        } else {
+          // No start found — output everything except the lookahead tail
+          const safe = buf.length - MAX_LOOKAHEAD;
+          if (safe > 0) {
+            out += buf.slice(0, safe);
+            buf = buf.slice(safe);
+          }
+          break;
+        }
+      }
+    }
+
+    return out;
+  };
+}
+
 export function useLocalAI() {
   const setStatus = useAIStore((s) => s.setStatus);
   const setDownloadProgress = useAIStore((s) => s.setDownloadProgress);
@@ -165,10 +233,16 @@ export function useLocalAI() {
           },
         });
 
+        // Strip thinking blocks from stream when thinking mode is off.
+        // Gemma 4 always emits <|channel>...</channel|> regardless of
+        // reasoning_format — we filter them out here in JS.
+        const filter = thinking ? null : makeThinkingFilter();
+
         let fullText = "";
         for await (const chunk of textStream) {
-          fullText += chunk;
-          appendResponse(chunk);
+          const text = filter ? filter(chunk) : chunk;
+          fullText += text;
+          if (text) appendResponse(text);
         }
 
         setStatus("ready");
