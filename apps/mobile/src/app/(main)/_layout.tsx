@@ -6,6 +6,10 @@ export default function MainLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen
+        name="ai-settings"
+        options={{ headerShown: true, title: "AI" }}
+      />
+      <Stack.Screen
         name="add-transaction"
         options={{ presentation: "modal", headerShown: true, title: "Add Transaction" }}
       />

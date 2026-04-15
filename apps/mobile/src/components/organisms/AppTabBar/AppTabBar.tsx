@@ -1,11 +1,10 @@
-import { View, Pressable } from "react-native";
+import { View } from "react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { House, CurrencyDollar, Sun, Leaf } from "phosphor-react-native";
+import { House, CurrencyDollar, Sun, Leaf, UsersThree } from "phosphor-react-native";
 import type { ComponentType } from "react";
 import type { IconProps } from "phosphor-react-native";
-import { useCSSVariable } from "uniwind";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AppText } from "@/components/atoms/Text";
+import { AppTabItem } from "./AppTabItem";
 
 const TAB_CONFIG: Record<
   string,
@@ -15,13 +14,15 @@ const TAB_CONFIG: Record<
   money: { label: "Finance", icon: CurrencyDollar },
   day: { label: "Day", icon: Sun },
   life: { label: "Life", icon: Leaf },
+  people: { label: "People", icon: UsersThree },
 };
 
-const ALL_TABS = ["home", "money", "day", "life"];
+const ALL_TABS = ["home", "money", "day", "life", "people"];
 
 /**
- * Floating pill-shaped tab bar (iOS <26 and Android).
- * The "+" FAB is rendered separately in _layout.tsx as AppTabBarFAB.
+ * Floating pill-shaped tab bar for iOS <26 and Android.
+ * Renders 5 equal tabs: Home, Finance, Day, Life, People.
+ * The "+" FAB is rendered separately as AppTabBarFAB.
  * @level Organism
  */
 export function AppTabBar({
@@ -30,10 +31,6 @@ export function AppTabBar({
   navigation,
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const [primaryColor, mutedColor] = useCSSVariable([
-    "--color-primary",
-    "--color-muted",
-  ]);
 
   const renderTab = (routeName: string) => {
     const routeIndex = state.routes.findIndex((r) => r.name === routeName);
@@ -45,7 +42,6 @@ export function AppTabBar({
 
     const { options } = descriptors[route.key];
     const isFocused = state.index === routeIndex;
-    const Icon = config.icon;
 
     const onPress = () => {
       const event = navigation.emit({
@@ -59,36 +55,18 @@ export function AppTabBar({
     };
 
     const onLongPress = () => {
-      navigation.emit({
-        type: "tabLongPress",
-        target: route.key,
-      });
+      navigation.emit({ type: "tabLongPress", target: route.key });
     };
 
     return (
-      <Pressable
+      <AppTabItem
         key={route.key}
-        accessibilityRole="button"
-        accessibilityState={isFocused ? { selected: true } : {}}
-        accessibilityLabel={options.tabBarAccessibilityLabel ?? config.label}
+        label={options.tabBarAccessibilityLabel ?? config.label}
+        icon={config.icon}
+        isFocused={isFocused}
         onPress={onPress}
         onLongPress={onLongPress}
-        className="flex-1 items-center gap-0.5 py-3"
-      >
-        <Icon
-          size={22}
-          weight={isFocused ? "fill" : "regular"}
-          color={isFocused ? (primaryColor as string) : (mutedColor as string)}
-        />
-        <AppText
-          size="xs"
-          color={isFocused ? "primary" : "muted"}
-          align="center"
-          style={{ fontSize: 9 }}
-        >
-          {config.label}
-        </AppText>
-      </Pressable>
+      />
     );
   };
 
@@ -98,7 +76,7 @@ export function AppTabBar({
       className="absolute bottom-0 left-0 right-0"
       style={{ paddingBottom: insets.bottom }}
     >
-      <View className="mx-4 mb-3 flex-row overflow-hidden rounded-full bg-surface shadow-xl">
+      <View className="mx-4 mb-1 flex-row overflow-hidden rounded-full bg-surface shadow-xl">
         {ALL_TABS.map(renderTab)}
       </View>
     </View>

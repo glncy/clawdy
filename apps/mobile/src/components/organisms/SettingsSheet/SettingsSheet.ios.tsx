@@ -56,7 +56,7 @@ const MAIN_ITEMS: MenuItem[] = [
     icon: Brain,
     label: "AI",
     description: "Provider & model settings",
-    onPress: () => router.push("/(main)/(tabs)/settings/ai" as never),
+    onPress: () => router.push("/(main)/ai-settings" as never),
   },
 ];
 
