@@ -1,0 +1,17 @@
+diff --git a/app.plugin.js b/app.plugin.js
+index 429345ee82f02e7cbe5cda0699b88b2f0114ceb6..38d4e268ec59d121ee9a39be20bc6dd911dcd0a5 100644
+--- a/app.plugin.js
++++ b/app.plugin.js
+@@ -1 +1,10 @@
+-module.exports = require("./lib/module/expo-plugin/withLlamaRN")
+\ No newline at end of file
++// Patched: fix @expo/config-plugins interop issue in llama.rn CJS build
++const configPlugins = require('@expo/config-plugins');
++require.cache[require.resolve('@expo/config-plugins')] = {
++  id: require.resolve('@expo/config-plugins'),
++  filename: require.resolve('@expo/config-plugins'),
++  loaded: true,
++  exports: { ...configPlugins, default: configPlugins },
++};
++const plugin = require("./lib/commonjs/expo-plugin/withLlamaRN");
++module.exports = plugin.default || plugin;
