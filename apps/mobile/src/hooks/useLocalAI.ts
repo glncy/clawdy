@@ -159,13 +159,13 @@ export function useLocalAI() {
     try {
       // Unload existing model to prevent memory leaks
       if (sharedModel) {
-        console.log("[AI] Unloading existing model...");
+        console.debug("[useLocalAI.loadModel] Unloading existing model...");
         await sharedModel.unload();
         sharedModel = null;
       }
 
       const modelPath = getLocalModelPath(MODEL.id);
-      console.log("[AI] Loading model from path:", modelPath);
+      console.debug("[useLocalAI.loadModel] Loading model from path:", modelPath);
 
       const model = llama.languageModel(modelPath, {
         contextParams: {
@@ -176,7 +176,7 @@ export function useLocalAI() {
         },
       });
 
-      console.log("[AI] Calling model.prepare()...");
+      console.debug("[useLocalAI.loadModel] Calling model.prepare()...");
 
       // Race prepare() against a 60s timeout so we fail loudly
       // instead of hanging forever on OOM or unsupported arch.
@@ -190,21 +190,21 @@ export function useLocalAI() {
         ),
       ]);
 
-      console.log("[AI] Model ready.");
+      console.debug("[useLocalAI.loadModel] Model ready.");
       sharedModel = model;
       setStatus("ready");
     } catch (e) {
       const msg = e instanceof Error
         ? `Load failed: ${e.message}`
         : `Load failed: ${String(e)}`;
-      console.error("[AI] Load failed:", msg);
+      console.error("[useLocalAI.loadModel] Load failed:", msg);
       setStatus("idle");
       setError(msg);
     }
   }, [setStatus, setError]);
 
   const complete = useCallback(
-    async (userMessage: string, systemPrompt?: string, thinking = false) => {
+    async (userMessage: string, systemPrompt?: string, filterThinking = true) => {
       // Guard against concurrent inference
       if (useAIStore.getState().status === "inferring") return null;
 
@@ -226,17 +226,12 @@ export function useLocalAI() {
               : []),
             { role: "user" as const, content: userMessage },
           ],
-          maxTokens: 512,
-          temperature: 0.3,
-          providerOptions: {
-            llama: { reasoning_format: thinking ? "auto" : "none" },
-          },
+          temperature: 0.7,
         });
 
-        // Strip thinking blocks from stream when thinking mode is off.
-        // Gemma 4 always emits <|channel>...</channel|> regardless of
-        // reasoning_format — we filter them out here in JS.
-        const filter = thinking ? null : makeThinkingFilter();
+        // Strip thinking blocks (e.g. <|channel>...</channel|> for Gemma 4)
+        // from the raw text stream. Enabled by default.
+        const filter = filterThinking ? makeThinkingFilter() : null;
 
         let fullText = "";
         for await (const chunk of textStream) {
@@ -266,9 +261,9 @@ export function useLocalAI() {
     async <T>(
       userMessage: string,
       systemPrompt: string,
-      thinking = false
+      filterThinking = true
     ): Promise<T | null> => {
-      const result = await complete(userMessage, systemPrompt, thinking);
+      const result = await complete(userMessage, systemPrompt, filterThinking);
       if (!result) return null;
 
       try {
