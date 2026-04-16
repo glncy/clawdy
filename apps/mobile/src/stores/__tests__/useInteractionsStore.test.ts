@@ -1,5 +1,6 @@
 import { useInteractionsStore } from "../useInteractionsStore";
 import { usePeopleStore } from "../usePeopleStore";
+import { interactions as interactionsTable, nextTopics as nextTopicsTable } from "../../db/schema";
 import type { Database } from "../../db/client";
 
 type Row = Record<string, unknown>;
@@ -23,10 +24,10 @@ function makeFakeDb() {
         },
       }),
     }),
-    delete: (_table: unknown) => ({
+    delete: (table: unknown) => ({
       where: async () => {
-        iRows.length = 0;
-        tRows.length = 0;
+        if (table === interactionsTable) iRows.length = 0;
+        else tRows.length = 0;
       },
     }),
     select: () => ({

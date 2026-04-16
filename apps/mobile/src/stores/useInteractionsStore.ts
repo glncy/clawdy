@@ -142,12 +142,20 @@ export const useInteractionsStore = create<InteractionsState>((set, get) => ({
     set((s) => {
       const prev = s.byContactId[contactId];
       if (!prev) return s;
+      const interactions = prev.interactions.filter((i) => i.id !== id);
+      const latest = interactions[0];
+      if (latest) {
+        usePeopleStore.getState().patchContactMeta(contactId, {
+          lastInteractionAt: latest.occurredAt,
+          lastInteractionType: latest.type,
+        });
+      }
       return {
         byContactId: {
           ...s.byContactId,
           [contactId]: {
             ...prev,
-            interactions: prev.interactions.filter((i) => i.id !== id),
+            interactions,
           },
         },
       };
