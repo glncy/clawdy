@@ -44,11 +44,54 @@ export interface Priority {
 export interface Contact {
   id: string;
   name: string;
-  relationship: string;
-  birthday?: string;
-  lastTalkedDaysAgo: number;
-  giftIdea?: string;
-  thingsTheyLove?: string;
+  phone?: string;
+  notes?: string;
+  nudgeFrequencyDays: number;
+  source: "manual" | "device";
+  deviceContactId?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Derived (not persisted):
+  lastInteractionAt?: string;
+  lastInteractionType?: Interaction["type"];
+}
+
+export interface Interaction {
+  id: string;
+  contactId: string;
+  type: "call" | "coffee" | "text" | "voicenote" | "other";
+  note?: string;
+  aiSummary?: string;
+  occurredAt: string;
+  createdAt: string;
+}
+
+export interface NextTopic {
+  id: string;
+  contactId: string;
+  topic: string;
+  isDone: boolean;
+  createdAt: string;
+}
+
+export interface SpecialDate {
+  id: string;
+  contactId: string;
+  type: "birthday" | "anniversary" | "other";
+  label?: string;
+  month: number;
+  day: number;
+  createdAt: string;
+}
+
+export interface Gift {
+  id: string;
+  contactId: string;
+  specialDateId?: string;
+  name: string;
+  isAiSuggested: boolean;
+  givenAt?: string;
+  createdAt: string;
 }
 
 export interface SleepLog {
