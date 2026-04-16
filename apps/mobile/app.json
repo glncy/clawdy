@@ -49,6 +49,12 @@
       "expo-web-browser",
       "expo-build-properties",
       [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow clawdi to import people from your contacts so you can track who matters."
+        }
+      ],
+      [
         "llama.rn",
         {
           "enableEntitlements": true,
