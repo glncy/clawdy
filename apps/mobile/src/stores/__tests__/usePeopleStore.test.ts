@@ -95,4 +95,23 @@ describe("usePeopleStore", () => {
     const found = usePeopleStore.getState().getContactById("missing");
     expect(found).toBeUndefined();
   });
+
+  it("patchContactMeta updates derived fields in-memory only", async () => {
+    const { db } = makeFakeDb();
+    const c = await usePeopleStore.getState().addContact(db, {
+      name: "Maria",
+      nudgeFrequencyDays: 14,
+      source: "manual",
+    });
+
+    usePeopleStore.getState().patchContactMeta(c!.id, {
+      lastInteractionAt: "2026-04-16T10:00:00.000Z",
+      lastInteractionType: "call",
+    });
+
+    const updated = usePeopleStore.getState().contacts[0]!;
+    expect(updated.lastInteractionAt).toBe("2026-04-16T10:00:00.000Z");
+    expect(updated.lastInteractionType).toBe("call");
+    expect(updated.name).toBe("Maria"); // unchanged
+  });
 });
