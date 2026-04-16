@@ -10,6 +10,10 @@ export default function MainLayout() {
         options={{ headerShown: true, title: "AI" }}
       />
       <Stack.Screen
+        name="add-person"
+        options={{ presentation: "modal", headerShown: true, title: "Add Person" }}
+      />
+      <Stack.Screen
         name="add-transaction"
         options={{ presentation: "modal", headerShown: true, title: "Add Transaction" }}
       />
