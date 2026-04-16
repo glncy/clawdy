@@ -3,7 +3,7 @@ import { GearSix } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
 import { useSettingsSheetStore } from "@/stores/useSettingsSheetStore";
 
-type TabName = "home" | "money" | "day" | "life";
+type TabName = "home" | "money" | "day" | "life" | "people";
 
 interface HeaderGearButtonProps {
   tab?: TabName;

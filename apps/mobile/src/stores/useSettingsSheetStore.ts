@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type TabName = "home" | "money" | "day" | "life";
+type TabName = "home" | "money" | "day" | "life" | "people";
 
 interface SettingsSheetState {
   isOpen: boolean;
