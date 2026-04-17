@@ -3,6 +3,7 @@ import {
   documentDirectory,
   getInfoAsync,
   copyAsync,
+  deleteAsync,
 } from "expo-file-system/legacy";
 import { openDatabaseSync } from "expo-sqlite";
 import { drizzle } from "drizzle-orm/expo-sqlite";
@@ -50,3 +51,10 @@ export async function createDatabase() {
 }
 
 export type Database = Awaited<ReturnType<typeof createDatabase>>;
+
+export async function deleteDatabase(): Promise<void> {
+  if (!documentDirectory) return;
+  const dbFileName = getDbFileName();
+  await deleteAsync(`${documentDirectory}SQLite/${dbFileName}`, { idempotent: true });
+  await Updates.reloadAsync();
+}
