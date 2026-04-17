@@ -1,3 +1,18 @@
+import { accounts } from "./accounts";
+import { transactions } from "./transactions";
+import { categories } from "./categories";
+import { recurringBills } from "./recurringBills";
+import { savingsGoals } from "./savingsGoals";
+import { budgetSettings } from "./budgetSettings";
+import { contacts } from "./contacts";
+import { interactions } from "./interactions";
+import { nextTopics } from "./nextTopics";
+import { specialDates } from "./specialDates";
+import { gifts } from "./gifts";
+import { priorities } from "./priorities";
+import { quickList } from "./quickList";
+import { metadata } from "./metadata";
+
 export { accounts } from "./accounts";
 export { transactions } from "./transactions";
 export { categories } from "./categories";
@@ -27,21 +42,6 @@ export type { GiftRow, NewGift } from "./gifts";
 export type { PriorityRow, NewPriority } from "./priorities";
 export type { QuickListRow, NewQuickListItem } from "./quickList";
 export type { MetadataRow, NewMetadata } from "./metadata";
-
-import { accounts } from "./accounts";
-import { transactions } from "./transactions";
-import { categories } from "./categories";
-import { recurringBills } from "./recurringBills";
-import { savingsGoals } from "./savingsGoals";
-import { budgetSettings } from "./budgetSettings";
-import { contacts } from "./contacts";
-import { interactions } from "./interactions";
-import { nextTopics } from "./nextTopics";
-import { specialDates } from "./specialDates";
-import { gifts } from "./gifts";
-import { priorities } from "./priorities";
-import { quickList } from "./quickList";
-import { metadata } from "./metadata";
 
 export const schema = {
   accounts,

@@ -12,7 +12,6 @@ export function useDayInsight() {
   const isAIAvailable = useIsAIAvailable();
   const { complete } = useLocalAI();
   const {
-    priorities,
     grouped,
     completedToday,
     totalToday,
@@ -49,19 +48,14 @@ export function useDayInsight() {
     } finally {
       setIsGenerating(false);
     }
-  }, [
-    isAIAvailable,
-    isGenerating,
-    totalToday,
-    grouped,
-    completedToday,
-    pomodoroSessionsToday,
-  ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAIAvailable, isGenerating, totalToday, grouped, completedToday, pomodoroSessionsToday]);
 
   useEffect(() => {
     if (isAIAvailable && !generatedRef.current) {
       generate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAIAvailable]);
 
   return { insight, isGenerating, refresh: generate };

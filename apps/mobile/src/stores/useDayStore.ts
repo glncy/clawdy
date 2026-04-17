@@ -114,35 +114,39 @@ export const useDayStore = create<DayState>((set, get) => ({
     if (isLoaded || isLoading) return;
     set({ isLoading: true });
 
-    const today = todayISO();
+    try {
+      const today = todayISO();
 
-    const [pRows, qRows, tonightRow, pomodoroRow] = await Promise.all([
-      db
-        .select()
-        .from(prioritiesTable)
-        .where(eq(prioritiesTable.date, today)),
-      db.select().from(quickListTable).where(eq(quickListTable.completed, 0)),
-      db
-        .select()
-        .from(metadataTable)
-        .where(eq(metadataTable.key, tonightKey(today))),
-      db
-        .select()
-        .from(metadataTable)
-        .where(eq(metadataTable.key, pomodoroKey(today))),
-    ]);
+      const [pRows, qRows, tonightRow, pomodoroRow] = await Promise.all([
+        db
+          .select()
+          .from(prioritiesTable)
+          .where(eq(prioritiesTable.date, today)),
+        db.select().from(quickListTable),
+        db
+          .select()
+          .from(metadataTable)
+          .where(eq(metadataTable.key, tonightKey(today))),
+        db
+          .select()
+          .from(metadataTable)
+          .where(eq(metadataTable.key, pomodoroKey(today))),
+      ]);
 
-    set({
-      priorities: (pRows as PriorityRow[]).map(rowToPriority),
-      quickList: (qRows as QuickListRow[]).map(rowToQuickItem),
-      tonight: (tonightRow[0] as { value?: string } | undefined)?.value ?? "",
-      pomodoroCount: parseInt(
-        (pomodoroRow[0] as { value?: string } | undefined)?.value ?? "0",
-        10,
-      ),
-      isLoaded: true,
-      isLoading: false,
-    });
+      set({
+        priorities: (pRows as PriorityRow[]).map(rowToPriority),
+        quickList: (qRows as QuickListRow[]).map(rowToQuickItem),
+        tonight: (tonightRow[0] as { value?: string } | undefined)?.value ?? "",
+        pomodoroCount:
+          parseInt(
+            (pomodoroRow[0] as { value?: string } | undefined)?.value ?? "0",
+            10,
+          ) || 0,
+        isLoaded: true,
+      });
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   addPriority: async (db, { text, type }) => {
@@ -158,7 +162,11 @@ export const useDayStore = create<DayState>((set, get) => ({
     }
 
     const today = todayISO();
-    const sortOrder = priorities.filter((p) => p.type === type).length;
+    const typePriorities = priorities.filter((p) => p.type === type);
+    const sortOrder =
+      typePriorities.length > 0
+        ? Math.max(...typePriorities.map((p) => p.sortOrder)) + 1
+        : 0;
     const now = new Date().toISOString();
 
     const newPriority: Priority = {
@@ -258,33 +266,32 @@ export const useDayStore = create<DayState>((set, get) => ({
       );
 
     const now = new Date().toISOString();
-    const newPriorities: Priority[] = [];
+    const newRows = (incompleteRows as PriorityRow[]).map((row) => ({
+      id: generateId(),
+      text: row.text,
+      type: row.type,
+      date: today,
+      completed: 0 as const,
+      completedAt: null,
+      sortOrder: row.sortOrder,
+      rolledOverFrom: yesterday,
+    }));
 
-    for (const row of incompleteRows as PriorityRow[]) {
-      const id = generateId();
-      await db.insert(prioritiesTable).values({
-        id,
-        text: row.text,
-        type: row.type,
-        date: today,
-        completed: 0,
-        completedAt: null,
-        sortOrder: row.sortOrder,
-        rolledOverFrom: yesterday,
-      });
-
-      newPriorities.push({
-        id,
-        text: row.text,
-        type: row.type,
-        isCompleted: false,
-        date: today,
-        completedAt: null,
-        sortOrder: row.sortOrder,
-        rolledOverFrom: yesterday,
-        createdAt: now,
-      });
+    if (newRows.length > 0) {
+      await db.insert(prioritiesTable).values(newRows);
     }
+
+    const newPriorities: Priority[] = newRows.map((row) => ({
+      id: row.id,
+      text: row.text,
+      type: row.type,
+      isCompleted: false,
+      date: today,
+      completedAt: null,
+      sortOrder: row.sortOrder,
+      rolledOverFrom: yesterday,
+      createdAt: now,
+    }));
 
     set((state) => ({
       priorities: [...state.priorities, ...newPriorities],

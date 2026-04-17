@@ -106,7 +106,7 @@ export const AddPrioritySheet = () => {
             {isMustAtMax ? (
               <View className="rounded-xl bg-warning/10 px-4 py-3">
                 <AppText size="sm" color="warning">
-                  You already have 3 must-dos. That's the daily limit.
+                  {"You already have 3 must-dos. That\u2019s the daily limit."}
                 </AppText>
               </View>
             ) : (

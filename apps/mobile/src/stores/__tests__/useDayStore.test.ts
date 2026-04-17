@@ -2,7 +2,6 @@ import { useDayStore } from "../useDayStore";
 import {
   priorities as prioritiesTable,
   quickList as quickListTable,
-  metadata as metadataTable,
 } from "../../db/schema";
 import type { Database } from "../../db/client";
 
@@ -27,10 +26,11 @@ function makeFakeDb() {
 
   const db = {
     insert: (table: unknown) => ({
-      values: async (v: Row) => {
-        if (table === prioritiesTable) pRows.push({ ...v });
-        else if (table === quickListTable) qRows.push({ ...v });
-        else mRows.push({ ...v });
+      values: async (v: Row | Row[]) => {
+        const rows = Array.isArray(v) ? v : [v];
+        if (table === prioritiesTable) rows.forEach((r) => pRows.push({ ...r }));
+        else if (table === quickListTable) rows.forEach((r) => qRows.push({ ...r }));
+        else rows.forEach((r) => mRows.push({ ...r }));
       },
     }),
     update: (table: unknown) => ({
@@ -61,16 +61,21 @@ function makeFakeDb() {
     select: () => ({
       from: (table: unknown) => {
         _selectFrom = table;
+        const getRows = () => {
+          const rows =
+            _selectFrom === prioritiesTable
+              ? pRows
+              : _selectFrom === quickListTable
+                ? qRows
+                : mRows;
+          return [...rows];
+        };
         return {
-          where: (_cond: unknown) => {
-            const rows =
-              _selectFrom === prioritiesTable
-                ? pRows
-                : _selectFrom === quickListTable
-                  ? qRows
-                  : mRows;
-            return Promise.resolve([...rows]);
-          },
+          where: (_cond: unknown) => Promise.resolve(getRows()),
+          then: (
+            resolve: (v: Row[]) => unknown,
+            reject: (e: unknown) => unknown,
+          ) => Promise.resolve(getRows()).then(resolve, reject),
         };
       },
     }),
