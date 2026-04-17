@@ -1,65 +1,105 @@
-import { ScrollView, View } from "react-native";
-import { Stack } from "expo-router";
-import { Card } from "heroui-native";
+import { useState } from "react";
+import { Alert, ScrollView, View } from "react-native";
+import { Stack, router } from "expo-router";
+import { Button } from "heroui-native";
+import { AddressBook, Plus, UsersThree } from "phosphor-react-native";
+import { useCSSVariable } from "uniwind";
 import { AppText } from "@/components/atoms/Text";
-import { NudgeCard } from "@/components/molecules/NudgeCard";
 import { ContactList } from "@/components/organisms/ContactList";
-import { MOCK_CONTACTS } from "@/data/mockData";
+import { HeaderGearButton } from "@/components/molecules/HeaderGearButton";
+import { usePeopleData } from "@/hooks/usePeopleData";
+import { importDeviceContact } from "@/services/importDeviceContact";
 
 export default function PeopleScreen() {
-  const nudgeContact = MOCK_CONTACTS.find((c) => c.lastTalkedDaysAgo >= 4);
-  const upcomingBirthday = MOCK_CONTACTS.find((c) => c.birthday);
+  const { contacts, addContact } = usePeopleData();
+  const [mutedColor, primaryForegroundColor] = useCSSVariable([
+    "--color-muted",
+    "--color-primary-foreground",
+  ]);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const openAddPerson = () => router.push("/(main)/add-person" as never);
+
+  const handleImportFromContacts = async () => {
+    if (isImporting) return;
+    setIsImporting(true);
+    try {
+      const imported = await importDeviceContact();
+      if (!imported) return;
+      await addContact({
+        name: imported.name,
+        phone: imported.phone,
+        nudgeFrequencyDays: 14,
+        source: "device",
+        deviceContactId: imported.deviceContactId,
+      });
+    } catch (err) {
+      Alert.alert(
+        "Couldn't import contact",
+        err instanceof Error ? err.message : "Please try again.",
+      );
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   return (
     <>
-      <Stack.Screen options={{ title: "People" }} />
+      <Stack.Screen
+        options={{
+          title: "People",
+          headerRight: () => <HeaderGearButton tab="people" />,
+        }}
+      />
       <ScrollView
         className="flex-1 bg-background"
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerClassName="px-5 pt-20 pb-32 gap-5"
+        contentContainerClassName="px-5 pt-5 pb-32 gap-5"
       >
-        <AppText size="2xl" weight="bold" family="headline">
-          People
-        </AppText>
-
-        {nudgeContact && (
-          <NudgeCard
-            name={nudgeContact.name}
-            daysAgo={nudgeContact.lastTalkedDaysAgo}
-          />
-        )}
-
-        <ContactList contacts={MOCK_CONTACTS} />
-
-        {/* Upcoming Birthdays */}
-        {upcomingBirthday && (
-          <View className="gap-2">
-            <AppText size="sm" weight="semibold" color="muted">
-              Upcoming birthdays
+        {contacts.length === 0 ? (
+          <View className="items-center gap-3 rounded-3xl bg-surface px-6 py-12">
+            <UsersThree size={40} color={mutedColor as string} />
+            <AppText
+              size="lg"
+              weight="semibold"
+              align="center"
+              family="headline"
+            >
+              Add the people who matter
             </AppText>
-            <Card className="bg-surface p-4">
-              <Card.Body className="flex-row items-center gap-3">
-                <View className="h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
-                  <AppText size="xs" color="muted" align="center">
-                    {upcomingBirthday.birthday?.split(" ")[0]}
-                  </AppText>
-                  <AppText size="sm" weight="bold">
-                    {upcomingBirthday.birthday?.split(" ")[1]}
-                  </AppText>
-                </View>
-                <View className="flex-1">
-                  <AppText size="sm" weight="medium">
-                    {upcomingBirthday.name}{"'"}s Birthday
-                  </AppText>
-                  {upcomingBirthday.giftIdea && (
-                    <AppText size="xs" color="muted">
-                      Gift idea: {upcomingBirthday.giftIdea}
-                    </AppText>
-                  )}
-                </View>
-              </Card.Body>
-            </Card>
+            <AppText size="sm" color="muted" align="center">
+              Track interactions, remember birthdays, and stay connected to the
+              people in your life.
+            </AppText>
+            <Button
+              variant="primary"
+              onPress={openAddPerson}
+              className="mt-2"
+            >
+              <View className="flex-row items-center gap-1.5">
+                <Plus
+                  size={16}
+                  weight="bold"
+                  color={primaryForegroundColor as string}
+                />
+                <Button.Label>Add your first person</Button.Label>
+              </View>
+            </Button>
+            <Button
+              variant="tertiary"
+              onPress={handleImportFromContacts}
+              isDisabled={isImporting}
+            >
+              <View className="flex-row items-center gap-1.5">
+                <AddressBook size={16} weight="bold" color={mutedColor as string} />
+                <Button.Label>
+                  {isImporting ? "Importing…" : "Import from Contacts"}
+                </Button.Label>
+              </View>
+            </Button>
           </View>
+        ) : (
+          <ContactList contacts={contacts} />
         )}
       </ScrollView>
     </>

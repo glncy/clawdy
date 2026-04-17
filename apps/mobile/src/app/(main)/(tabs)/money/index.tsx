@@ -46,7 +46,7 @@ export default function MoneyScreen() {
       <ScrollView
         className="flex-1 bg-background"
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerClassName="px-5 pb-32 gap-5"
+        contentContainerClassName="px-5 pt-5 pb-32 gap-5"
       >
         {/* Balance Hero */}
         <Card className="bg-surface p-5">
