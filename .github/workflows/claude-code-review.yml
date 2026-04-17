@@ -2,7 +2,9 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
+    # removed: synchronize (re-runs on every commit push) and reopened
+    # to limit code review to first-time PR creation and draft→ready conversions only
+    types: [opened, ready_for_review]
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
