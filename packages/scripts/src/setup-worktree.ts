@@ -1,11 +1,10 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, readFileSync, readdirSync, symlinkSync } from "node:fs";
-import { join } from "node:path";
-import { basename } from "node:path";
+import { basename, join } from "node:path";
 
 type WorktreeEntry = {
   path: string;
-  branch: string;
+  branch?: string; // undefined for detached HEAD worktrees
 };
 
 function listWorktrees(repoRoot: string): WorktreeEntry[] {
@@ -24,13 +23,13 @@ function listWorktrees(repoRoot: string): WorktreeEntry[] {
     } else if (line.startsWith("branch ")) {
       current.branch = line.slice(7).trim();
     } else if (line === "" && current.path) {
-      worktrees.push(current as WorktreeEntry);
+      worktrees.push({ path: current.path, branch: current.branch });
       current = {};
     }
   }
 
   if (current.path) {
-    worktrees.push(current as WorktreeEntry);
+    worktrees.push({ path: current.path, branch: current.branch });
   }
 
   return worktrees;
@@ -46,20 +45,22 @@ function resolveWorktreePath(repoRoot: string, target: string): string | null {
     (wt) =>
       wt.path === target ||
       basename(wt.path) === target ||
-      (wt.branch && wt.branch.includes(target)),
+      (wt.branch &&
+        (wt.branch === target ||
+          wt.branch === `refs/heads/${target}` ||
+          basename(wt.branch) === target)),
   );
 
   return match?.path ?? null;
 }
 
-function getWorkspaceParentDirs(repoRoot: string): string[] {
+function getWorkspaces(repoRoot: string): string[] {
   try {
     const raw = readFileSync(join(repoRoot, "package.json"), "utf8");
     const pkg = JSON.parse(raw) as { workspaces?: string[] };
-    const globs = pkg.workspaces ?? [];
-    return [...new Set(globs.map((g) => g.replace(/\/\*.*$/, "")))];
+    return pkg.workspaces ?? [];
   } catch {
-    return ["apps", "packages"];
+    return ["apps/*", "packages/*"];
   }
 }
 
@@ -71,7 +72,7 @@ function linkNodeModules(src: string, dst: string): LinkResult {
     lstatSync(dst);
     return "skipped";
   } catch {
-    symlinkSync(src, dst);
+    symlinkSync(src, dst, "dir");
     return "linked";
   }
 }
@@ -110,14 +111,17 @@ export function setupWorktree({ repoRoot, target }: SetupWorktreeOptions): Setup
 
   link("node_modules");
 
-  const parentDirs = getWorkspaceParentDirs(repoRoot);
-  for (const parentDir of parentDirs) {
-    const fullParent = join(repoRoot, parentDir);
-    if (!existsSync(fullParent)) continue;
-
-    for (const entry of readdirSync(fullParent, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      link(`${parentDir}/${entry.name}/node_modules`);
+  for (const pattern of getWorkspaces(repoRoot)) {
+    if (pattern.includes("*")) {
+      const parentDir = pattern.replace(/\/\*.*$/, "");
+      const fullParent = join(repoRoot, parentDir);
+      if (!existsSync(fullParent)) continue;
+      for (const entry of readdirSync(fullParent, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        link(`${parentDir}/${entry.name}/node_modules`);
+      }
+    } else {
+      link(`${pattern}/node_modules`);
     }
   }
 
