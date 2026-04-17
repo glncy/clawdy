@@ -70,6 +70,7 @@ interface DayState {
   pomodoroCount: number;
   hasCheckedRollover: boolean;
   isLoaded: boolean;
+  isLoading: boolean;
 
   loadToday: (db: Database) => Promise<void>;
 
@@ -106,8 +107,13 @@ export const useDayStore = create<DayState>((set, get) => ({
   pomodoroCount: 0,
   hasCheckedRollover: false,
   isLoaded: false,
+  isLoading: false,
 
   loadToday: async (db) => {
+    const { isLoaded, isLoading } = get();
+    if (isLoaded || isLoading) return;
+    set({ isLoading: true });
+
     const today = todayISO();
 
     const [pRows, qRows, tonightRow, pomodoroRow] = await Promise.all([
@@ -135,6 +141,7 @@ export const useDayStore = create<DayState>((set, get) => ({
         10,
       ),
       isLoaded: true,
+      isLoading: false,
     });
   },
 

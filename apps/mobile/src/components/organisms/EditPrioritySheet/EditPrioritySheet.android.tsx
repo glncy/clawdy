@@ -21,7 +21,8 @@ const TYPE_OPTIONS: { value: Priority["type"]; label: string }[] = [
 
 export const EditPrioritySheet = () => {
   const { isOpen, priority, close } = useEditPrioritySheetStore();
-  const { updatePriority, deletePriority } = useDayStore();
+  const updatePriority = useDayStore((s) => s.updatePriority);
+  const deletePriority = useDayStore((s) => s.deletePriority);
   const { db } = useDatabase();
 
   const [text, setText] = useState("");
@@ -117,7 +118,6 @@ export const EditPrioritySheet = () => {
                 variant="tertiary"
                 className="flex-1"
                 onPress={handleDelete}
-                color="danger"
               >
                 <Button.Label>Delete</Button.Label>
               </Button>

@@ -30,7 +30,7 @@ const STEPS: { key: Step; question: string; label: string }[] = [
 export const AddPrioritySheet = () => {
   const { isOpen, close } = useAddPrioritySheetStore();
   const { activeMustCount } = useDayData();
-  const { addPriority } = useDayStore();
+  const addPriority = useDayStore((s) => s.addPriority);
   const { db } = useDatabase();
 
   const [stepIndex, setStepIndex] = useState(0);

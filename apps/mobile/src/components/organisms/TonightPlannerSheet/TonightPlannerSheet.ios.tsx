@@ -22,7 +22,8 @@ import { CopySimple } from "phosphor-react-native";
 export const TonightPlannerSheet = () => {
   const { isOpen, close } = useTonightPlannerSheetStore();
   const { tonight } = useDayData();
-  const { setTonight, getYesterdayTonight } = useDayStore();
+  const setTonight = useDayStore((s) => s.setTonight);
+  const getYesterdayTonight = useDayStore((s) => s.getYesterdayTonight);
   const { db } = useDatabase();
 
   const [text, setText] = useState("");

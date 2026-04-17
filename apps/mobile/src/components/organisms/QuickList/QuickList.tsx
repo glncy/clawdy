@@ -42,7 +42,9 @@ const QuickItemRow = ({ item, onToggle, onDelete }: QuickItemRowProps) => {
 
 export const QuickList = () => {
   const { quickList } = useDayData();
-  const { addQuickItem, toggleQuickItem, deleteQuickItem } = useDayStore();
+  const addQuickItem = useDayStore((s) => s.addQuickItem);
+  const toggleQuickItem = useDayStore((s) => s.toggleQuickItem);
+  const deleteQuickItem = useDayStore((s) => s.deleteQuickItem);
   const { db } = useDatabase();
 
   const [newText, setNewText] = useState("");

@@ -1,11 +1,10 @@
 import { View, Alert } from "react-native";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { Button } from "heroui-native";
 import { ProgressRing } from "@/components/atoms/ProgressRing";
 import { AppText } from "@/components/atoms/Text";
 import { useTimerStore } from "@/stores/useTimerStore";
 import { useDayStore } from "@/stores/useDayStore";
-import { useDayData } from "@/hooks/useDayData";
 import { useDatabase } from "@/hooks/useDatabase";
 
 const BREAK_SUGGESTIONS = [
@@ -28,21 +27,24 @@ export const PomodoroTimer = () => {
   const reset = useTimerStore((s) => s.reset);
   const tick = useTimerStore((s) => s.tick);
 
-  const { incrementPomodoro } = useDayStore();
-  const { pomodoroCount } = useDayData();
+  const incrementPomodoro = useDayStore((s) => s.incrementPomodoro);
+  const pomodoroCount = useDayStore((s) => s.pomodoroCount);
   const { db } = useDatabase();
 
+  const dbRef = useRef(db);
+  dbRef.current = db;
+
   const handleSessionComplete = useCallback(async () => {
-    if (db) {
-      await incrementPomodoro(db);
+    if (dbRef.current) {
+      await incrementPomodoro(dbRef.current);
     }
     Alert.alert(
-      "Session Complete! 🎉",
+      "Session Complete!",
       randomBreakSuggestion(),
       [{ text: "Got it" }],
     );
     reset();
-  }, [db, incrementPomodoro, reset]);
+  }, [incrementPomodoro, reset]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -51,17 +53,9 @@ export const PomodoroTimer = () => {
   }, [isRunning, tick]);
 
   useEffect(() => {
-    if (seconds === 0 && isRunning === false && useTimerStore.getState().startedAt === null) {
-      // Session ended naturally (timer store already stopped it)
-    }
-  }, [seconds, isRunning]);
-
-  // Watch for session completion (seconds hit 0 while timer was running)
-  const prevSecondsRef = { current: seconds };
-  useEffect(() => {
     const unsub = useTimerStore.subscribe((state, prevState) => {
       if (prevState.isRunning && !state.isRunning && state.seconds === 0) {
-        handleSessionComplete();
+        void handleSessionComplete();
       }
     });
     return unsub;

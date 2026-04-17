@@ -22,7 +22,7 @@ interface SectionProps {
 }
 
 const PrioritySection = ({ type, items }: SectionProps) => {
-  const { togglePriority } = useDayStore();
+  const togglePriority = useDayStore((s) => s.togglePriority);
   const { open: openEdit } = useEditPrioritySheetStore();
   const { db } = useDatabase();
 

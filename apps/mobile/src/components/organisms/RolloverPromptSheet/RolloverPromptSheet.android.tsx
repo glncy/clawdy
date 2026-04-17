@@ -13,8 +13,10 @@ import { ArrowCounterClockwise } from "phosphor-react-native";
 import { useCSSVariable } from "uniwind";
 
 export const RolloverPromptSheet = () => {
-  const { hasCheckedRollover, checkRollover, rollover, markRolloverChecked } =
-    useDayStore();
+  const hasCheckedRollover = useDayStore((s) => s.hasCheckedRollover);
+  const checkRollover = useDayStore((s) => s.checkRollover);
+  const rollover = useDayStore((s) => s.rollover);
+  const markRolloverChecked = useDayStore((s) => s.markRolloverChecked);
   const { db } = useDatabase();
 
   const [isOpen, setIsOpen] = useState(false);
